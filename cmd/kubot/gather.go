@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"kubot/internal/diagnose"
-	"kubot/internal/k8s"
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/diagnose"
+	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 // Shared pipeline every command and MCP tool runs: connect, collect, diagnose.

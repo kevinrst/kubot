@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"kubot/internal/model"
-	"kubot/internal/render"
+	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/render"
 )
 
 func newResourcesCmd() *cobra.Command {

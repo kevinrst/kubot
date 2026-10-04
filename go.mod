@@ -1,4 +1,4 @@
-module kubot
+module github.com/kevinrst/kubot
 
 go 1.26.1
 

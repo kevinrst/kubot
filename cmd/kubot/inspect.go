@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"kubot/internal/diagnose"
-	"kubot/internal/model"
-	"kubot/internal/render"
+	"github.com/kevinrst/kubot/internal/diagnose"
+	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/render"
 )
 
 // Scriptable exit codes: 0 clean, 1 warning, 2 critical, 3 failure, 64 bad flags.

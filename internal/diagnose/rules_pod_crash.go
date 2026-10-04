@@ -3,8 +3,8 @@ package diagnose
 import (
 	"fmt"
 
-	"kubot/internal/k8s"
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 type PodCrashLoopRule struct{}

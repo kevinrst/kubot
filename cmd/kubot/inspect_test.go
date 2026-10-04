@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 func TestExitCode(t *testing.T) {

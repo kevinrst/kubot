@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 func TestPrintReport_JSONMatchesSchemaShape(t *testing.T) {

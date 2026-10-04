@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 // Options controls rendering.

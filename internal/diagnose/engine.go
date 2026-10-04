@@ -3,8 +3,8 @@ package diagnose
 import (
 	"sort"
 
-	"kubot/internal/k8s"
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 // A single diagnostic check. Rules are pure: same snapshot in, same findings out.

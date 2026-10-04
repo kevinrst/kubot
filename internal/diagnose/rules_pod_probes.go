@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"kubot/internal/k8s"
-	"kubot/internal/model"
+	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kevinrst/kubot/internal/model"
 )
 
 // Fewer aggregated failures than this is startup noise, not a broken probe.

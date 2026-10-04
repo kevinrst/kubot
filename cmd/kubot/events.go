@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"kubot/internal/render"
+	"github.com/kevinrst/kubot/internal/render"
 )
 
 func newEventsCmd() *cobra.Command {
