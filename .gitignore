@@ -1,0 +1,17 @@
+# Binaries and build output
+bin/
+/kubot
+/kubot.exe
+
+# Reference clone of pgbot used for structural guidance — not part of this repo
+pgbot/
+
+# Local kubeconfig / env
+*.kubeconfig
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
