@@ -103,7 +103,6 @@ func collectPVCs(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, c
 }
 
 func collectNodes(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, _ string) error {
-	// Cluster-scoped: no namespace filter.
 	res, err := cs.CoreV1().Nodes().List(ctx, opts)
 	if err != nil {
 		return err

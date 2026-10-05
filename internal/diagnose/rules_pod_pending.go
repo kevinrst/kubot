@@ -81,7 +81,6 @@ func (PodPendingRule) Run(s *k8s.Snapshot) []model.Finding {
 		if string(pod.Status.Phase) != "Pending" {
 			continue
 		}
-		// Assigned to a node = not a scheduling problem (image pull, volume, …).
 		if pod.Spec.NodeName != "" {
 			continue
 		}

@@ -8,8 +8,6 @@ import (
 	"io"
 )
 
-// One callable an agent can invoke. A handler error becomes a tool error,
-// not a transport error, so one bad call never kills the session.
 type Tool struct {
 	Name        string
 	Description string
@@ -17,7 +15,6 @@ type Tool struct {
 	Handler     func(ctx context.Context, args json.RawMessage) (string, error)
 }
 
-// A reusable message template. Build renders it with caller arguments.
 type Prompt struct {
 	Name        string
 	Description string
@@ -56,7 +53,7 @@ type Server struct {
 
 type rpcRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
-	ID      json.RawMessage `json:"id,omitempty"` // absent ⇒ notification (no reply)
+	ID      json.RawMessage `json:"id,omitempty"`
 	Method  string          `json:"method"`
 	Params  json.RawMessage `json:"params,omitempty"`
 }
@@ -204,7 +201,6 @@ func (s *Server) callTool(ctx context.Context, req rpcRequest, w io.Writer) {
 		writeErr(w, req.ID, -32602, "unknown tool: "+p.Name)
 		return
 	}
-	// Tool failures come back as results with isError, not transport errors.
 	text, err := tool.Handler(ctx, p.Arguments)
 	if err != nil {
 		writeResult(w, req.ID, toolResult("error: "+err.Error(), true))
@@ -332,6 +328,6 @@ func writeMessage(w io.Writer, msg rpcResponse) {
 	if err != nil {
 		return
 	}
-	b = append(b, '\n') // newline-delimited transport
+	b = append(b, '\n')
 	_, _ = w.Write(b)
 }

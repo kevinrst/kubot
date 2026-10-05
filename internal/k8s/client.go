@@ -27,7 +27,6 @@ func ResolveContextName(opts Options) string {
 	return raw.CurrentContext
 }
 
-// Builds a read-only clientset from flags, env, default path, or in-cluster.
 func NewClientset(opts Options) (*kubernetes.Clientset, error) {
 	cfg, err := BuildConfig(opts)
 	if err != nil {
@@ -36,9 +35,8 @@ func NewClientset(opts Options) (*kubernetes.Clientset, error) {
 	return NewForConfig(cfg)
 }
 
-// Resolves the kubeconfig chain into a rest.Config for alternate clients.
 func BuildConfig(opts Options) (*rest.Config, error) {
-	// Explicit --kubeconfig or --context.
+	// --kubeconfig or --context.
 	if opts.Kubeconfig != "" || opts.Context != "" {
 		path := opts.Kubeconfig
 		if path == "" {
@@ -57,7 +55,7 @@ func BuildConfig(opts Options) (*rest.Config, error) {
 		}
 		return cfg, nil
 	}
-	// Default chain: kubeconfig file, then in-cluster.
+
 	loading := clientcmd.NewDefaultClientConfigLoadingRules()
 	if cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loading, nil).ClientConfig(); err == nil {
 		return cfg, nil
@@ -68,7 +66,6 @@ func BuildConfig(opts Options) (*rest.Config, error) {
 	return nil, fmt.Errorf("no cluster connection: set KUBECONFIG, pass --kubeconfig, or run inside a cluster")
 }
 
-// Drops server deprecation warnings so they never pollute kubot's output.
 func NewForConfig(cfg *rest.Config) (*kubernetes.Clientset, error) {
 	cfg.WarningHandler = rest.NoWarnings{}
 	return kubernetes.NewForConfig(cfg)

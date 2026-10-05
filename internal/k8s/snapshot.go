@@ -6,7 +6,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
-// The cluster state the engine reasons over. No diagnosis lives here.
 type Snapshot struct {
 	Context        string
 	Pods           []corev1.Pod
@@ -23,7 +22,6 @@ type Snapshot struct {
 	Degraded []string
 }
 
-// Events for one pod, most recent first.
 func (s *Snapshot) EventsForPod(namespace, podName string) []corev1.Event {
 	var out []corev1.Event
 	for _, e := range s.Events {
@@ -42,7 +40,6 @@ func (s *Snapshot) EventsForPod(namespace, podName string) []corev1.Event {
 	return out
 }
 
-// Ready/total backend addresses for a service, from its EndpointSlices.
 func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) {
 	for _, es := range s.EndpointSlices {
 		if es.Namespace != namespace {
@@ -85,7 +82,6 @@ func TopOwnerName(p *corev1.Pod) string {
 			return o.Name
 		}
 	}
-	// No owner: fall back to the pod name.
 	return p.Name
 }
 

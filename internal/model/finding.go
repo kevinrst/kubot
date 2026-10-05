@@ -21,7 +21,7 @@ func RankSeverity(s string) int {
 
 type Finding struct {
 	Severity       string         `json:"severity"`
-	Resource       string         `json:"resource"` // e.g. "deployment/payments-api"
+	Resource       string         `json:"resource"`
 	Namespace      string         `json:"namespace,omitempty"`
 	Reason         string         `json:"reason"` // snake_case, stable id
 	Message        string         `json:"message"`
@@ -31,7 +31,7 @@ type Finding struct {
 
 type ClusterInfo struct {
 	Context   string `json:"context,omitempty"`
-	Namespace string `json:"namespace,omitempty"` // requested scope, "" = all
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type Report struct {

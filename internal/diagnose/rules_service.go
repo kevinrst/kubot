@@ -14,7 +14,6 @@ func (ServiceNoEndpointsRule) Name() string { return "service_no_endpoints" }
 func (ServiceNoEndpointsRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, svc := range s.Services {
-		// Headless, ExternalName, and selector-less services are out of scope.
 		if svc.Spec.ClusterIP == "None" {
 			continue
 		}

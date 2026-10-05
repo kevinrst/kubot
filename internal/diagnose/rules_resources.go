@@ -2,6 +2,8 @@ package diagnose
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -23,9 +25,6 @@ func (PodMissingResourcesRule) Name() string { return "pod_missing_resources" }
 func (PodMissingResourcesRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, pod := range s.Pods {
-		// Mirror static pods (etcd, apiserver, …) are node-local files, not
-		// API objects you can patch — flagging them is unactionable noise.
-		// Same for kube-system: platform components owned by the cluster.
 		if isMirrorPod(&pod) || pod.Namespace == "kube-system" {
 			continue
 		}
@@ -192,23 +191,11 @@ func isMirrorPod(pod *corev1.Pod) bool {
 }
 
 func joinList(ss []string) string {
-	out := ""
-	for i, s := range ss {
-		if i > 0 {
-			out += ", "
-		}
-		out += s
-	}
-	return out
+	return strings.Join(ss, ", ")
 }
 
 func inList(ss []string, v string) bool {
-	for _, s := range ss {
-		if s == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ss, v)
 }
 
 func joinBytes(b int64) string {
