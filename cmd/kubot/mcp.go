@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kevinrst/kubot/internal/diagnose"
-	"github.com/kevinrst/kubot/internal/k8s"
 	"github.com/kevinrst/kubot/internal/mcp"
 	"github.com/kevinrst/kubot/internal/model"
 )
@@ -126,34 +125,17 @@ func kubotResources() []mcp.Resource {
 	}
 }
 
-// Same as gather but with explicit scope, for MCP handlers.
 func diagnoseForTool(ctx context.Context, namespace, workload string) (model.Report, error) {
-	cs, err := k8s.NewClientset(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag})
+	rep, snap, err := gatherScoped(ctx, namespace)
 	if err != nil {
 		return model.Report{}, err
 	}
-	snap, err := k8s.Collect(ctx, cs, namespace, timeoutFlag)
-	if err != nil {
-		return model.Report{}, err
+	rep.Issues = diagnose.FilterByWorkload(rep.Issues, workload, namespace, snap.PodsByTopOwner())
+	if rep.Issues == nil {
+		rep.Issues = []model.Finding{}
 	}
-	if mc, err := k8s.NewMetricsClient(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag}); err == nil {
-		k8s.CollectMetrics(ctx, mc, namespace, snap)
-	} else {
-		snap.Degraded = append(snap.Degraded, "pod usage unavailable ("+err.Error()+")")
-	}
-	engine := diagnose.NewEngine()
-	findings := engine.Run(snap)
-	findings = diagnose.FilterByWorkload(findings, workload, namespace, snap.PodsByTopOwner())
-	if findings == nil {
-		findings = []model.Finding{}
-	}
-	return model.Report{
-		SchemaVersion: model.SchemaVersion,
-		Cluster:       model.ClusterInfo{Context: snap.Context, Namespace: namespace},
-		Status:        model.OverallStatus(findings),
-		Issues:        findings,
-		Checked:       diagnose.CheckedSubsystems(),
-	}, nil
+	rep.Status = model.OverallStatus(rep.Issues)
+	return rep, nil
 }
 
 func inspectTool(ctx context.Context, raw json.RawMessage) (string, error) {

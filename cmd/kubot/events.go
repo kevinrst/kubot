@@ -24,7 +24,7 @@ func newEventsCmd() *cobra.Command {
 				return err
 			}
 			if asJSON {
-				return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: true})
+				return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: true, Width: terminalWidth()})
 			}
 			type row struct {
 				ns, kind, name, reason string

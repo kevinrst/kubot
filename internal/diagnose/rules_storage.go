@@ -52,7 +52,7 @@ func (PodMountFailureRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, pod := range s.Pods {
 		msg, count := mountFailure(s, pod.Namespace, pod.Name)
-		if count < minProbeFailures {
+		if count < minEventRepeats {
 			continue
 		}
 		out = append(out, model.Finding{

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -83,8 +82,7 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 			fmt.Fprintf(cmd.OutOrStdout(), "Did you mean: %s?\n", strings.Join(s, ", "))
 		}
 	}
-	os.Exit(exitCode(rep.Issues, f.failOn))
-	return nil
+	return exitError{exitCode(rep.Issues, f.failOn)}
 }
 
 // Maps findings to the exit code, counting only severities at/above failOn.

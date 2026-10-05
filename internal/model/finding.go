@@ -6,11 +6,17 @@ const (
 	SeverityNote     = "note"
 )
 
-// Sort order for severities.
 var SeverityOrder = map[string]int{
 	SeverityCritical: 0,
 	SeverityWarning:  1,
 	SeverityNote:     2,
+}
+
+func RankSeverity(s string) int {
+	if r, ok := SeverityOrder[s]; ok {
+		return r
+	}
+	return len(SeverityOrder)
 }
 
 type Finding struct {

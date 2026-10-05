@@ -15,10 +15,16 @@ func (DeploymentUnavailableRule) Name() string { return "deployment_unavailable"
 
 func (DeploymentUnavailableRule) Run(s *k8s.Snapshot) []model.Finding {
 	// Count unhealthy pods per top owner, for evidence.
+	ownerOf := map[string]string{}
+	for owner, pods := range s.PodsByTopOwner() {
+		for _, p := range pods {
+			ownerOf[p] = owner
+		}
+	}
 	failingPods := map[string]int{}
 	for _, pod := range s.Pods {
 		if podUnhealthy(&pod) {
-			failingPods[topOwnerOfPod(s, pod.Namespace, pod.Name)]++
+			failingPods[ownerOf[pod.Name]]++
 		}
 	}
 	var out []model.Finding
@@ -86,16 +92,4 @@ func podUnhealthy(p *corev1.Pod) bool {
 		}
 	}
 	return false
-}
-
-func topOwnerOfPod(s *k8s.Snapshot, ns, podName string) string {
-	m := s.PodsByTopOwner()
-	for owner, pods := range m {
-		for _, p := range pods {
-			if p == podName {
-				return owner
-			}
-		}
-	}
-	return podName
 }

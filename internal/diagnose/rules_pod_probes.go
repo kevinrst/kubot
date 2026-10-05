@@ -11,7 +11,7 @@ import (
 )
 
 // Fewer aggregated failures than this is startup noise, not a broken probe.
-const minProbeFailures = 3
+const minEventRepeats = 3
 
 type PodProbeFailingRule struct{}
 
@@ -88,7 +88,7 @@ func probeFailureFromEvents(s *k8s.Snapshot, namespace, podName string) map[stri
 	if count == 0 {
 		count = 1
 	}
-	if count < minProbeFailures {
+	if count < minEventRepeats {
 		return nil
 	}
 	return map[string]any{

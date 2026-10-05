@@ -7,7 +7,6 @@ import (
 	"github.com/kevinrst/kubot/internal/model"
 )
 
-// A single diagnostic check. Rules are pure: same snapshot in, same findings out.
 type Rule interface {
 	Name() string
 	Run(s *k8s.Snapshot) []model.Finding
@@ -21,15 +20,13 @@ func NewEngine() *Engine {
 	return &Engine{rules: DefaultRules()}
 }
 
-// Runs all rules. Output order is fixed (severity, resource, reason) so the
-// same snapshot always yields the same report.
 func (e *Engine) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, r := range e.rules {
 		out = append(out, r.Run(s)...)
 	}
 	sort.Slice(out, func(i, j int) bool {
-		oi, oj := model.SeverityOrder[out[i].Severity], model.SeverityOrder[out[j].Severity]
+		oi, oj := model.RankSeverity(out[i].Severity), model.RankSeverity(out[j].Severity)
 		if oi != oj {
 			return oi < oj
 		}

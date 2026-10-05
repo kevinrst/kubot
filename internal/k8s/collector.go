@@ -8,9 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// Namespace "" means all namespaces. A failed list degrades the snapshot
-// instead of aborting the run: partial diagnosis beats none.
-func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, timeout time.Duration) (*Snapshot, error) {
+func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, timeout time.Duration) *Snapshot {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -38,7 +36,7 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	if ctx.Err() == context.DeadlineExceeded {
 		snap.Degraded = append(snap.Degraded, "collection timed out; results partial")
 	}
-	return snap, nil
+	return snap
 }
 
 func collectPods(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {

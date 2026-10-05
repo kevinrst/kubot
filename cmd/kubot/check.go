@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -31,8 +30,7 @@ func newCheckCmd() *cobra.Command {
 			for _, i := range rep.Issues {
 				fmt.Fprintf(out, "%s %s: %s\n", i.Severity, i.Resource, i.Message)
 			}
-			os.Exit(exitCode(rep.Issues, failOn))
-			return nil
+			return exitError{exitCode(rep.Issues, failOn)}
 		},
 	}
 	cmd.Flags().StringVar(&failOn, "fail-on", "critical", "severity that exits non-zero: critical|warn|info|none")

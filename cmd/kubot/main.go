@@ -12,10 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Set by the linker at release time (-X main.version=...).
 var version = "dev"
 
-// Shared connection flags.
 var (
 	kubeconfigFlag string
 	contextFlag    string
@@ -25,7 +23,6 @@ var (
 )
 
 func main() {
-	// SIGINT/SIGTERM cancels the run instead of killing it mid-collection.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -60,18 +57,17 @@ func main() {
 	root.PersistentFlags().BoolVar(&noColorFlag, "no-color", false,
 		"disable ANSI color (also honors NO_COLOR)")
 
-	// enteredRun tells a malformed invocation (cobra fails before any handler
-	// runs) apart from a handler that ran and failed. Exit codes are a public
-	// contract, so the two must not share code 3.
 	enteredRun := false
 	root.PersistentPreRun = func(*cobra.Command, []string) {
 		enteredRun = true
 	}
 
 	if err := root.ExecuteContext(ctx); err != nil {
+		var xe exitError
+		if errors.As(err, &xe) {
+			os.Exit(xe.code)
+		}
 		fmt.Fprintln(os.Stderr, "kubot: "+err.Error())
-		// 64 = bad invocation (cobra parse error or bad flag value).
-		// 3 = the command ran and failed. 1/2 come from handlers directly.
 		var ue usageError
 		if !enteredRun || errors.As(err, &ue) {
 			os.Exit(exitUsage)
@@ -79,6 +75,10 @@ func main() {
 		os.Exit(exitFailure)
 	}
 }
+
+type exitError struct{ code int }
+
+func (e exitError) Error() string { return fmt.Sprintf("exit %d", e.code) }
 
 // usageError marks a bad flag value so main maps it to exit 64.
 type usageError struct{ error }

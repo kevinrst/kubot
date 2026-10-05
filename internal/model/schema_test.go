@@ -8,6 +8,7 @@ import (
 
 // Committed schema must equal a fresh generation. Fix: `go run ./tools/schemagen`.
 func TestSchema_matchesModel(t *testing.T) {
+
 	want := ReportSchema()
 	path := filepath.Join("..", "..", "schema", "kubot-inspect-"+SchemaVersion+".json")
 	got, err := os.ReadFile(path)

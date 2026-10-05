@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -66,5 +68,21 @@ func TestValidFailOnAndFormat(t *testing.T) {
 	}
 	if validFormat("sarif") {
 		t.Error("validFormat(sarif) should be false until the format ships")
+	}
+}
+
+func TestRunInspect_badFlag(t *testing.T) {
+	err := runInspect(&cobra.Command{}, inspectFlags{failOn: "bogus"})
+	var ue usageError
+	if !errors.As(err, &ue) {
+		t.Fatalf("expected usageError, got %v", err)
+	}
+}
+
+func TestExitErrorCarriesCode(t *testing.T) {
+	err := exitError{code: 2}
+	var xe exitError
+	if !errors.As(err, &xe) || xe.code != 2 {
+		t.Fatalf("expected code 2, got %v", err)
 	}
 }
