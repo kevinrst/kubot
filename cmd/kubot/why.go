@@ -29,7 +29,7 @@ func newWhyCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rep.Issues = diagnose.FilterByWorkload(rep.Issues, args[0], namespaceFlag, snap.PodsByTopOwner())
+			rep.Issues = diagnose.FilterByWorkload(rep.Issues, args[0], namespaceFlag, snap)
 			rep.Status = model.OverallStatus(rep.Issues)
 			if len(rep.Issues) == 0 && !asJSON {
 				fmt.Fprintf(cmd.OutOrStdout(), "No problems detected for %q.\n", args[0])

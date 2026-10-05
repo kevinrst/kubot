@@ -130,7 +130,7 @@ func diagnoseForTool(ctx context.Context, namespace, workload string) (model.Rep
 	if err != nil {
 		return model.Report{}, err
 	}
-	rep.Issues = diagnose.FilterByWorkload(rep.Issues, workload, namespace, snap.PodsByTopOwner())
+	rep.Issues = diagnose.FilterByWorkload(rep.Issues, workload, namespace, snap)
 	if rep.Issues == nil {
 		rep.Issues = []model.Finding{}
 	}

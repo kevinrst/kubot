@@ -70,7 +70,7 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 		return err
 	}
 	if f.workload != "" {
-		rep.Issues = diagnose.FilterByWorkload(rep.Issues, f.workload, namespaceFlag, snap.PodsByTopOwner())
+		rep.Issues = diagnose.FilterByWorkload(rep.Issues, f.workload, namespaceFlag, snap)
 		rep.Status = model.OverallStatus(rep.Issues)
 	}
 

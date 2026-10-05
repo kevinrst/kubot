@@ -66,14 +66,14 @@ func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) 
 func (s *Snapshot) PodsByTopOwner() map[string][]string {
 	m := map[string][]string{}
 	for _, p := range s.Pods {
-		owner := topOwnerName(&p)
+		owner := TopOwnerName(&p)
 		m[owner] = append(m[owner], p.Name)
 	}
 	return m
 }
 
-func topOwnerName(p *corev1.Pod) string {
-	// ReplicaSet "payments-api-7d8f9c6f8b" -> deployment "payments-api".
+// TopOwnerName guesses the workload owning a pod
+func TopOwnerName(p *corev1.Pod) string {
 	for _, o := range p.OwnerReferences {
 		if o.Kind == "ReplicaSet" {
 			if d := stripHashSuffix(o.Name); d != "" {
@@ -90,8 +90,6 @@ func topOwnerName(p *corev1.Pod) string {
 }
 
 func stripHashSuffix(rs string) string {
-	// "payments-api-7d8f9c6f8b" -> "payments-api". Only strips a trailing
-	// lowercase-alnum segment (len>=5), so "foo-bar" survives intact.
 	i := lastDash(rs)
 	if i <= 0 || len(rs)-i-1 < 5 {
 		return rs

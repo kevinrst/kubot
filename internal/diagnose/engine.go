@@ -41,9 +41,9 @@ func (e *Engine) Run(s *k8s.Snapshot) []model.Finding {
 	return out
 }
 
-// Narrows findings to one workload: bare name, "type/name", owned pods, and
-// matching services. Empty workload returns everything (namespace-filtered).
-func FilterByWorkload(findings []model.Finding, workload, namespace string, podsByOwner map[string][]string) []model.Finding {
+// Narrows findings to one workload: bare/type name, owned pods, and services linked via selectors.
+// Empty workload returns everything (namespace-filtered).
+func FilterByWorkload(findings []model.Finding, workload, namespace string, snap *k8s.Snapshot) []model.Finding {
 	if workload == "" {
 		if namespace == "" {
 			return findings
@@ -60,11 +60,64 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, pods
 	if i := indexSlash(workload); i >= 0 {
 		name = workload[i+1:] // "type/name" -> name
 	}
+	inScope := func(ns string) bool { return namespace == "" || ns == namespace }
+
+	ownerOf := map[podID]string{}
+	for _, p := range snap.Pods {
+		if inScope(p.Namespace) {
+			ownerOf[podID{p.Namespace, p.Name}] = k8s.TopOwnerName(&p)
+		}
+	}
 	related := map[string]bool{name: true}
-	for owner, pods := range podsByOwner {
-		if owner == name {
-			for _, p := range pods {
-				related[p] = true
+	nameHit := func(obj string) bool { return obj == name || hasPrefixMatch(obj, name) }
+	for _, p := range snap.Pods {
+		if inScope(p.Namespace) && nameHit(p.Name) {
+			related[p.Name] = true
+		}
+	}
+	for _, svc := range snap.Services {
+		if inScope(svc.Namespace) && nameHit(svc.Name) {
+			related[svc.Name] = true
+		}
+	}
+	for _, d := range snap.Deployments {
+		if inScope(d.Namespace) && nameHit(d.Name) {
+			related[d.Name] = true
+		}
+	}
+	for changed := true; changed; {
+		changed = false
+		add := func(n string) {
+			if n != "" && !related[n] {
+				related[n] = true
+				changed = true
+			}
+		}
+		for id, owner := range ownerOf {
+			if related[owner] {
+				add(id.name)
+			}
+			if related[id.name] {
+				add(owner)
+			}
+		}
+		for _, svc := range snap.Services {
+			if !inScope(svc.Namespace) {
+				continue
+			}
+			matched := podsMatchingSelector(snap, svc.Namespace, svc.Spec.Selector)
+			if related[svc.Name] {
+				for _, p := range matched {
+					add(p)
+					add(ownerOf[podID{svc.Namespace, p}])
+				}
+			} else {
+				for _, p := range matched {
+					if related[p] {
+						add(svc.Name)
+						break
+					}
+				}
 			}
 		}
 	}
@@ -77,6 +130,34 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, pods
 		resName := resourceName(f.Resource)
 		if related[resName] || hasPrefixMatch(resName, name) {
 			out = append(out, f)
+		}
+	}
+	return out
+}
+
+type podID struct {
+	ns   string
+	name string
+}
+
+func podsMatchingSelector(snap *k8s.Snapshot, ns string, sel map[string]string) []string {
+	if len(sel) == 0 {
+		return nil
+	}
+	var out []string
+	for _, p := range snap.Pods {
+		if p.Namespace != ns {
+			continue
+		}
+		ok := true
+		for k, v := range sel {
+			if p.Labels[k] != v {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			out = append(out, p.Name)
 		}
 	}
 	return out
@@ -107,7 +188,6 @@ func hasPrefixMatch(candidate, prefix string) bool {
 	if candidate[:len(prefix)] != prefix {
 		return false
 	}
-	// Boundary-aware: "payments-api-xxx" matches "payments-api".
 	if len(candidate) == len(prefix) {
 		return true
 	}

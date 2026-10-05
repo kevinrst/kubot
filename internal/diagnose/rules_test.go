@@ -281,13 +281,55 @@ func TestFilterByWorkload(t *testing.T) {
 	s := &k8s.Snapshot{Pods: []corev1.Pod{crashPod()}}
 	e := NewEngine()
 	all := e.Run(s)
-	filtered := FilterByWorkload(all, "payments-api", "", s.PodsByTopOwner())
+	filtered := FilterByWorkload(all, "payments-api", "", s)
 	if len(filtered) == 0 {
 		t.Fatal("expected workload match")
 	}
-	none := FilterByWorkload(all, "something-else-entirely", "", s.PodsByTopOwner())
+	none := FilterByWorkload(all, "something-else-entirely", "", s)
 	if len(none) != 0 {
 		t.Fatalf("expected no match, got %+v", none)
+	}
+}
+
+func TestFilterByWorkload_suffixedNames(t *testing.T) {
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "payments-deployment-abc12-xyz", Namespace: "default",
+			Labels:          map[string]string{"app": "payments"},
+			OwnerReferences: []metav1.OwnerReference{{Kind: "ReplicaSet", Name: "payments-deployment-abc12"}},
+		},
+		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app", Image: "x"}}},
+	}
+	svc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{Name: "payments-service", Namespace: "default"},
+		Spec:       corev1.ServiceSpec{Selector: map[string]string{"app": "payments"}},
+	}
+	dep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "payments-deployment", Namespace: "default"},
+		Status:     appsv1.DeploymentStatus{UnavailableReplicas: 1},
+	}
+	s := &k8s.Snapshot{
+		Pods:        []corev1.Pod{pod},
+		Services:    []corev1.Service{svc},
+		Deployments: []appsv1.Deployment{dep},
+	}
+	e := NewEngine()
+	all := e.Run(s)
+	// Querying the service must pull the differently-named pods+deployment
+	// through the selector link, not just by name.
+	got := FilterByWorkload(all, "payments-service", "", s)
+	names := map[string]bool{}
+	for _, f := range got {
+		names[f.Resource] = true
+	}
+	for _, want := range []string{"service/payments-service", "deployment/payments-deployment", "pod/payments-deployment-abc12-xyz"} {
+		if !names[want] {
+			t.Fatalf("missing %s in %+v", want, names)
+		}
+	}
+	// And the reverse: bare stem still matches everything by name.
+	if got := FilterByWorkload(all, "payments", "", s); len(got) != len(all) {
+		t.Fatalf("stem query got %d of %d", len(got), len(all))
 	}
 }
 

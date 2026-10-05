@@ -58,7 +58,7 @@ func newExplainCmd() *cobra.Command {
 				return err
 			}
 			if workload != "" {
-				rep.Issues = diagnose.FilterByWorkload(rep.Issues, workload, namespaceFlag, snap.PodsByTopOwner())
+				rep.Issues = diagnose.FilterByWorkload(rep.Issues, workload, namespaceFlag, snap)
 			}
 			if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, Width: terminalWidth()}); err != nil {
 				return err
