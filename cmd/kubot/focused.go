@@ -36,7 +36,7 @@ func newResourcesCmd() *cobra.Command {
 			}
 			rep.Issues = f
 			rep.Status = model.OverallStatus(f)
-			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON, Width: terminalWidth()})
+			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON, Width: terminalWidth(), NoScore: true})
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "machine-readable JSON output")
@@ -64,7 +64,7 @@ func newNetworkingCmd() *cobra.Command {
 			}
 			rep.Issues = f
 			rep.Status = model.OverallStatus(f)
-			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON, Width: terminalWidth()})
+			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON, Width: terminalWidth(), NoScore: true})
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "machine-readable JSON output")
