@@ -14,19 +14,19 @@ import (
 
 // Scriptable exit codes: 0 clean, 1 warning, 2 critical, 3 failure, 64 bad flags.
 const (
-	exitClean    = 0  // no findings at/above --fail-on
-	exitWarn     = 1  // at least one warning, no criticals
-	exitCritical = 2  // at least one critical finding
-	exitFailure  = 3  // connection / execution failure
-	exitUsage    = 64 // malformed invocation: bad flags, args, or unknown command
+	exitClean    = 0
+	exitWarn     = 1
+	exitCritical = 2
+	exitFailure  = 3
+	exitUsage    = 64
 )
 
 type inspectFlags struct {
 	json     bool
-	format   string // text|json (sarif|junit|prometheus later)
+	format   string // text|json
 	failOn   string // critical|warn|info|none
 	full     bool   // evidence + recommendations per finding
-	workload string // positional, kept in flags for testability
+	workload string
 }
 
 func newInspectCmd() *cobra.Command {
@@ -74,7 +74,7 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 		rep.Status = model.OverallStatus(rep.Issues)
 	}
 
-	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json", Full: f.full, Width: terminalWidth()}); err != nil {
+	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json", Full: f.full, Width: terminalWidth(), NoScore: f.workload != ""}); err != nil {
 		return err
 	}
 	if f.workload != "" && len(rep.Issues) == 0 && f.format == "text" {

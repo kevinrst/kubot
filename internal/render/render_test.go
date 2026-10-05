@@ -97,3 +97,32 @@ func TestHealthScore(t *testing.T) {
 		t.Errorf("got %d, want 86", got)
 	}
 }
+
+func TestScoreHiddenWhenScoped(t *testing.T) {
+	var scoped bytes.Buffer
+	if err := PrintText(&scoped, testReport(), false, Options{Width: 100, NoScore: true}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(scoped.String(), "/100") {
+		t.Errorf("scoped view must not grade:\n%s", scoped.String())
+	}
+	var full bytes.Buffer
+	if err := PrintText(&full, testReport(), false, Options{Width: 100}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(full.String(), "Cluster health:") {
+		t.Errorf("full view must grade:\n%s", full.String())
+	}
+}
+
+func TestScoreNamespaceLabel(t *testing.T) {
+	rep := testReport()
+	rep.Cluster.Namespace = "default"
+	var buf bytes.Buffer
+	if err := PrintText(&buf, rep, false, Options{Width: 100}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), "Namespace health:") {
+		t.Errorf("namespaced view mislabeled:\n%s", buf.String())
+	}
+}

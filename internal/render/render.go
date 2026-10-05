@@ -17,6 +17,7 @@ type Options struct {
 	JSON    bool
 	Full    bool
 	Width   int
+	NoScore bool
 }
 
 type styler struct{ on bool }
@@ -87,7 +88,13 @@ func PrintText(w io.Writer, rep model.Report, color bool, opt Options) error {
 	case score < 90:
 		paint = st.warn
 	}
-	fmt.Fprintf(w, "%s %s\n\n", st.dim("Cluster health:"), paint(fmt.Sprintf("%d/100", score)))
+	if !opt.NoScore {
+		label := "Cluster health:"
+		if rep.Cluster.Namespace != "" {
+			label = "Namespace health:"
+		}
+		fmt.Fprintf(w, "%s %s\n\n", st.dim(label), paint(fmt.Sprintf("%d/100", score)))
+	}
 
 	if len(rep.Issues) == 0 {
 		fmt.Fprintf(w, "  %s\n\n", st.good("OK — no problems detected."))
