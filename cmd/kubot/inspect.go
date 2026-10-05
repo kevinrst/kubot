@@ -46,7 +46,7 @@ func newInspectCmd() *cobra.Command {
 	fl := cmd.Flags()
 	fl.BoolVar(&f.json, "json", false, "emit the versioned Report as JSON (the agent/script contract)")
 	fl.StringVar(&f.format, "format", "text", "output format: text|json")
-	fl.StringVar(&f.failOn, "fail-on", "warn", "exit non-zero on findings at/above this severity: critical|warn|info|none")
+	fl.StringVar(&f.failOn, "fail-on", "none", "exit non-zero on findings at/above this severity: critical|warn|info|none (default none; use check for CI gating)")
 	return cmd
 }
 
