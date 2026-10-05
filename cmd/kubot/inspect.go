@@ -26,6 +26,7 @@ type inspectFlags struct {
 	json     bool
 	format   string // text|json (sarif|junit|prometheus later)
 	failOn   string // critical|warn|info|none
+	full     bool   // evidence + recommendations per finding
 	workload string // positional, kept in flags for testability
 }
 
@@ -47,6 +48,7 @@ func newInspectCmd() *cobra.Command {
 	fl.BoolVar(&f.json, "json", false, "emit the versioned Report as JSON (the agent/script contract)")
 	fl.StringVar(&f.format, "format", "text", "output format: text|json")
 	fl.StringVar(&f.failOn, "fail-on", "none", "exit non-zero on findings at/above this severity: critical|warn|info|none (default none; use check for CI gating)")
+	fl.BoolVar(&f.full, "full", false, "show evidence and recommendations per finding")
 	return cmd
 }
 
@@ -73,7 +75,7 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 		rep.Status = model.OverallStatus(rep.Issues)
 	}
 
-	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json"}); err != nil {
+	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json", Full: f.full, Width: terminalWidth()}); err != nil {
 		return err
 	}
 	if f.workload != "" && len(rep.Issues) == 0 && f.format == "text" {

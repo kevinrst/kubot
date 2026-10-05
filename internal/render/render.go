@@ -8,14 +8,35 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/kevinrst/kubot/internal/model"
 )
 
-// Options controls rendering.
 type Options struct {
 	NoColor bool
 	JSON    bool
+	Full    bool
+	Width   int
 }
+
+type styler struct{ on bool }
+
+func (s styler) c(code string, bold bool, text string) string {
+	if !s.on {
+		return text
+	}
+	st := lipgloss.NewStyle().Foreground(lipgloss.Color(code))
+	if bold {
+		st = st.Bold(true)
+	}
+	return st.Render(text)
+}
+
+func (s styler) dim(text string) string  { return s.c("243", false, text) }
+func (s styler) head(text string) string { return s.c("110", true, text) }
+func (s styler) crit(text string) string { return s.c("203", true, text) }
+func (s styler) warn(text string) string { return s.c("216", true, text) }
+func (s styler) good(text string) string { return s.c("114", false, text) }
 
 func UseColor(noColorFlag bool) bool {
 	if noColorFlag {
@@ -37,91 +58,159 @@ func PrintReport(w io.Writer, rep model.Report, opt Options) error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(rep)
 	}
-	return PrintText(w, rep, UseColor(opt.NoColor))
+	return PrintText(w, rep, UseColor(opt.NoColor), opt)
 }
 
-func PrintText(w io.Writer, rep model.Report, color bool) error {
-	bold, red, yellow, reset := "", "", "", ""
-	if color {
-		bold, red, yellow, reset = "\033[1m", "\033[31m", "\033[33m", "\033[0m"
+func PrintText(w io.Writer, rep model.Report, color bool, opt Options) error {
+	st := styler{on: color}
+	width := opt.Width
+	if width < 80 {
+		width = 80
 	}
-	fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%sKubernetes Health Report%s\n", bold, reset)
-	if rep.Cluster.Context != "" {
-		fmt.Fprintf(w, "context %s", rep.Cluster.Context)
-		if rep.Cluster.Namespace != "" {
-			fmt.Fprintf(w, " · namespace %s", rep.Cluster.Namespace)
-		} else {
-			fmt.Fprintf(w, " · all namespaces")
-		}
-		fmt.Fprintln(w, "")
+
+	scope := "all namespaces"
+	if rep.Cluster.Namespace != "" {
+		scope = "namespace " + rep.Cluster.Namespace
 	}
-	fmt.Fprintln(w, "")
+	context := rep.Cluster.Context
+	if context == "" {
+		context = "cluster"
+	}
+	fmt.Fprintf(w, "%s · %s · %s · %s\n\n",
+		st.good("connected"), st.head(context), scope, st.dim("read-only"))
+
+	score := healthScore(rep.Issues)
+	paint := st.good
+	switch {
+	case score < 70:
+		paint = st.crit
+	case score < 90:
+		paint = st.warn
+	}
+	fmt.Fprintf(w, "%s %s\n\n", st.dim("Cluster health:"), paint(fmt.Sprintf("%d/100", score)))
+
 	if len(rep.Issues) == 0 {
-		fmt.Fprintf(w, "  %sOK%s — no problems detected.\n", bold, reset)
+		fmt.Fprintf(w, "  %s\n\n", st.good("OK — no problems detected."))
 	} else {
-		groups := map[string][]model.Finding{}
-		for _, f := range rep.Issues {
-			groups[strings.ToUpper(f.Severity)] = append(groups[strings.ToUpper(f.Severity)], f)
-		}
-		for _, sev := range []string{"CRITICAL", "WARNING", "NOTE"} {
-			fs := groups[sev]
+		emit := func(header string, paint func(string) string, fs []model.Finding) {
 			if len(fs) == 0 {
-				continue
+				return
 			}
-			h := sev
-			if color {
-				if sev == "CRITICAL" {
-					h = red + sev + reset
-				} else if sev == "WARNING" {
-					h = yellow + sev + reset
+			fmt.Fprintln(w, paint(header))
+			for _, f := range fs {
+				if opt.Full {
+					printFinding(w, f, st, width)
+					continue
+				}
+				name := st.head(f.Resource)
+				if f.Namespace != "" {
+					name += " " + st.dim("("+f.Namespace+")")
+				}
+				fmt.Fprintf(w, "%s %s\n", paint("●"), name)
+				for _, l := range wrap(f.Message, width-4) {
+					fmt.Fprintf(w, "    %s\n", l)
 				}
 			}
-			fmt.Fprintln(w, h)
-			for _, f := range fs {
-				printFinding(w, f, color)
-			}
-			fmt.Fprintln(w, "")
+			fmt.Fprintln(w)
 		}
+		emit("CRITICAL", st.crit, filterSev(rep.Issues, model.SeverityCritical))
+		emit("WARNING", st.warn, filterSev(rep.Issues, model.SeverityWarning))
+		emit("NOTE", st.dim, filterSev(rep.Issues, model.SeverityNote))
 	}
+
 	if len(rep.Checked) > 0 {
 		cp := append([]string{}, rep.Checked...)
 		sort.Strings(cp)
-		fmt.Fprintf(w, "checked · %s\n", strings.Join(cp, " · "))
+		fmt.Fprintf(w, "%s\n", st.dim("checked · "+strings.Join(cp, " · ")))
 	}
-	fmt.Fprintln(w, "")
+	fmt.Fprintln(w)
 	if len(rep.Issues) > 0 {
-		fmt.Fprintln(w, "Details: kubot inspect <workload>  ·  Machine-readable: kubot inspect --json")
+		detail := "kubot inspect --full"
+		if !opt.Full {
+			fmt.Fprintln(w, st.dim("Details: "+detail+"   ·   Machine-readable: kubot inspect --json"))
+		}
 	}
 	return nil
 }
 
-func printFinding(w io.Writer, f model.Finding, color bool) {
-	bold, reset := "", ""
-	if color {
-		bold, reset = "\033[1m", "\033[0m"
+func filterSev(fs []model.Finding, sev string) []model.Finding {
+	var out []model.Finding
+	for _, f := range fs {
+		if f.Severity == sev {
+			out = append(out, f)
+		}
 	}
+	return out
+}
+
+func healthScore(fs []model.Finding) int {
+	penalty := 0
+	for _, f := range fs {
+		switch f.Severity {
+		case model.SeverityCritical:
+			penalty += 10
+		case model.SeverityWarning:
+			penalty += 3
+		default:
+			penalty += 1
+		}
+	}
+	if s := 100 - penalty; s > 0 {
+		return s
+	}
+	return 0
+}
+
+func wrap(text string, width int) []string {
+	if width < 20 {
+		width = 20
+	}
+	var lines []string
+	cur := ""
+	for _, w := range strings.Fields(text) {
+		switch {
+		case cur == "":
+			cur = w
+		case len(cur)+1+len(w) > width:
+			lines = append(lines, cur)
+			cur = w
+		default:
+			cur += " " + w
+		}
+	}
+	if cur != "" {
+		lines = append(lines, cur)
+	}
+	return lines
+}
+
+func printFinding(w io.Writer, f model.Finding, st styler, width int) {
 	res := f.Resource
 	if f.Namespace != "" {
-		res = fmt.Sprintf("%s (%s)", f.Resource, f.Namespace)
+		res = fmt.Sprintf("%s %s", f.Resource, st.dim("("+f.Namespace+")"))
 	}
-	fmt.Fprintf(w, "  %s%s%s\n", bold, res, reset)
-	fmt.Fprintf(w, "    %s\n", f.Message)
+	fmt.Fprintf(w, "  %s\n", st.head(res))
+	for _, l := range wrap(f.Message, width-4) {
+		fmt.Fprintf(w, "    %s\n", l)
+	}
 	if len(f.Evidence) > 0 {
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "    Evidence:")
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "    "+st.dim("Evidence:"))
 		keys := make([]string, 0, len(f.Evidence))
 		for k := range f.Evidence {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			fmt.Fprintf(w, "      %s: %v\n", k, f.Evidence[k])
+			fmt.Fprintf(w, "      %s %s: %v\n", st.dim("·"), k, f.Evidence[k])
 		}
 	}
 	if f.Recommendation != "" {
-		fmt.Fprintln(w, "")
-		fmt.Fprintf(w, "    Recommendation:\n      %s\n", f.Recommendation)
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "    "+st.dim("Recommendation:"))
+		for _, l := range wrap(f.Recommendation, width-6) {
+			fmt.Fprintf(w, "      %s\n", l)
+		}
 	}
-	fmt.Fprintln(w, "")
+	fmt.Fprintln(w)
 }

@@ -38,7 +38,7 @@ func newWhyCmd() *cobra.Command {
 				}
 				return nil
 			}
-			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON})
+			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON, Full: true, Width: terminalWidth()})
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "machine-readable JSON output")
