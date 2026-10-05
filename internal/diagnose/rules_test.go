@@ -134,6 +134,24 @@ func TestCrashLoopTerminatedWindow(t *testing.T) {
 	}
 }
 
+func TestProbeReadyPodIgnored(t *testing.T) {
+	p := crashPod()
+	p.Status.ContainerStatuses[0].State.Waiting = nil
+	p.Status.Conditions = []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue}}
+	ev := corev1.Event{
+		ObjectMeta:     metav1.ObjectMeta{Namespace: "default"},
+		InvolvedObject: corev1.ObjectReference{Kind: "Pod", Name: p.Name, Namespace: "default"},
+		Type:           "Warning",
+		Reason:         "Unhealthy",
+		Message:        "Readiness probe failed: connection refused",
+		Count:          12,
+	}
+	s := &k8s.Snapshot{Pods: []corev1.Pod{p}, Events: []corev1.Event{ev}}
+	if got := (PodProbeFailingRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("ready pod must be silent, got %+v", got)
+	}
+}
+
 func TestProbeTransientIgnored(t *testing.T) {
 	p := crashPod()
 	p.Status.ContainerStatuses[0].State.Waiting = nil

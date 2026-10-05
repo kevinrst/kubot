@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -32,6 +33,9 @@ func newWhyCmd() *cobra.Command {
 			rep.Status = model.OverallStatus(rep.Issues)
 			if len(rep.Issues) == 0 && !asJSON {
 				fmt.Fprintf(cmd.OutOrStdout(), "No problems detected for %q.\n", args[0])
+				if s := suggestWorkload(snap, args[0]); len(s) > 0 {
+					fmt.Fprintf(cmd.OutOrStdout(), "Did you mean: %s?\n", strings.Join(s, ", "))
+				}
 				return nil
 			}
 			return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: asJSON})

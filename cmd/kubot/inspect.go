@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -73,6 +75,11 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 
 	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json"}); err != nil {
 		return err
+	}
+	if f.workload != "" && len(rep.Issues) == 0 && f.format == "text" {
+		if s := suggestWorkload(snap, f.workload); len(s) > 0 {
+			fmt.Fprintf(cmd.OutOrStdout(), "Did you mean: %s?\n", strings.Join(s, ", "))
+		}
 	}
 	os.Exit(exitCode(rep.Issues, f.failOn))
 	return nil

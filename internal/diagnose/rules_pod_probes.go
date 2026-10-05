@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/kevinrst/kubot/internal/k8s"
 	"github.com/kevinrst/kubot/internal/model"
 )
@@ -18,6 +20,9 @@ func (PodProbeFailingRule) Name() string { return "pod_probe_failing" }
 func (PodProbeFailingRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, pod := range s.Pods {
+		if podReady(&pod) {
+			continue
+		}
 		probeEvidence := probeFailureFromEvents(s, pod.Namespace, pod.Name)
 		if probeEvidence == nil {
 			continue
@@ -34,6 +39,15 @@ func (PodProbeFailingRule) Run(s *k8s.Snapshot) []model.Finding {
 		})
 	}
 	return out
+}
+
+func podReady(pod *corev1.Pod) bool {
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
 
 func probeFailureFromEvents(s *k8s.Snapshot, namespace, podName string) map[string]any {
