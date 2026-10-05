@@ -29,6 +29,15 @@ func ResolveContextName(opts Options) string {
 
 // Builds a read-only clientset from flags, env, default path, or in-cluster.
 func NewClientset(opts Options) (*kubernetes.Clientset, error) {
+	cfg, err := BuildConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+	return NewForConfig(cfg)
+}
+
+// Resolves the kubeconfig chain into a rest.Config for alternate clients.
+func BuildConfig(opts Options) (*rest.Config, error) {
 	// Explicit --kubeconfig or --context.
 	if opts.Kubeconfig != "" || opts.Context != "" {
 		path := opts.Kubeconfig
@@ -46,15 +55,15 @@ func NewClientset(opts Options) (*kubernetes.Clientset, error) {
 		if err != nil {
 			return nil, fmt.Errorf("load kubeconfig: %w", err)
 		}
-		return NewForConfig(cfg)
+		return cfg, nil
 	}
 	// Default chain: kubeconfig file, then in-cluster.
 	loading := clientcmd.NewDefaultClientConfigLoadingRules()
 	if cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loading, nil).ClientConfig(); err == nil {
-		return NewForConfig(cfg)
+		return cfg, nil
 	}
 	if inCluster, err := rest.InClusterConfig(); err == nil {
-		return NewForConfig(inCluster)
+		return inCluster, nil
 	}
 	return nil, fmt.Errorf("no cluster connection: set KUBECONFIG, pass --kubeconfig, or run inside a cluster")
 }

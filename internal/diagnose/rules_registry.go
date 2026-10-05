@@ -1,6 +1,5 @@
 package diagnose
 
-// Keep this list small: a few problems done well beats broad shallow coverage.
 func DefaultRules() []Rule {
 	return []Rule{
 		PodCrashLoopRule{},
@@ -10,6 +9,15 @@ func DefaultRules() []Rule {
 		PodProbeFailingRule{},
 		DeploymentUnavailableRule{},
 		ServiceNoEndpointsRule{},
+		PodMissingResourcesRule{},
+		PodLowLimitRule{},
+		PodNearLimitRule{},
+		DeploymentResourceRiskRule{},
+		DeploymentStalledRule{},
+		ReplicaSetLeftoverRule{},
+		PVCPendingRule{},
+		PodMountFailureRule{},
+		NodePressureRule{},
 	}
 }
 

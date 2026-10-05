@@ -14,9 +14,10 @@ type Snapshot struct {
 	ReplicaSets    []appsv1.ReplicaSet
 	Services       []corev1.Service
 	EndpointSlices []discoveryv1.EndpointSlice
-	Endpoints      []corev1.Endpoints
 	Events         []corev1.Event
 	Nodes          []corev1.Node
+	Usage          []ContainerUsage
+	PVCs           []corev1.PersistentVolumeClaim
 
 	// Collectors that failed without aborting the run (e.g. events RBAC denied).
 	Degraded []string
@@ -41,10 +42,8 @@ func (s *Snapshot) EventsForPod(namespace, podName string) []corev1.Event {
 	return out
 }
 
-// Ready/total backend addresses for a service. Prefers EndpointSlices,
-// falls back to legacy Endpoints.
+// Ready/total backend addresses for a service, from its EndpointSlices.
 func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) {
-	sawSlices := false
 	for _, es := range s.EndpointSlices {
 		if es.Namespace != namespace {
 			continue
@@ -53,7 +52,6 @@ func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) 
 		if !ok || svc != svcName {
 			continue
 		}
-		sawSlices = true
 		for _, ep := range es.Endpoints {
 			total++
 			if ep.Conditions.Ready == nil || *ep.Conditions.Ready {
@@ -61,32 +59,7 @@ func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) 
 			}
 		}
 	}
-	if sawSlices {
-		return ready, total
-	}
-	for _, ep := range s.Endpoints {
-		if ep.Namespace != namespace || ep.Name != svcName {
-			continue
-		}
-		for _, sub := range ep.Subsets {
-			total += len(sub.Addresses)
-			ready += len(sub.Addresses)
-			total += len(sub.NotReadyAddresses)
-		}
-		return ready, total
-	}
-	return 0, 0
-}
-
-func (s *Snapshot) HasEndpointSlices(namespace, svcName string) bool {
-	for _, es := range s.EndpointSlices {
-		if es.Namespace == namespace {
-			if svc, ok := es.Labels[discoveryv1.LabelServiceName]; ok && svc == svcName {
-				return true
-			}
-		}
-	}
-	return false
+	return ready, total
 }
 
 // Pod names keyed by workload name (deployment, statefulset, …).

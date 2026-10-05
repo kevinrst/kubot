@@ -59,22 +59,6 @@ func TestReadyEndpoints_slices(t *testing.T) {
 	}
 }
 
-func TestReadyEndpoints_legacyFallback(t *testing.T) {
-	s := &Snapshot{Endpoints: []corev1.Endpoints{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "shop", Namespace: "default"},
-			Subsets: []corev1.EndpointSubset{{
-				Addresses:         []corev1.EndpointAddress{{IP: "10.0.0.1"}},
-				NotReadyAddresses: []corev1.EndpointAddress{{IP: "10.0.0.2"}},
-			}},
-		},
-	}}
-	r, total := s.ReadyEndpoints("default", "shop")
-	if r != 1 || total != 2 {
-		t.Fatalf("got ready=%d total=%d", r, total)
-	}
-}
-
 func TestPodsByTopOwner_stripsReplicaSetHash(t *testing.T) {
 	p := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

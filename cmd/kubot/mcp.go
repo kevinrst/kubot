@@ -136,6 +136,11 @@ func diagnoseForTool(ctx context.Context, namespace, workload string) (model.Rep
 	if err != nil {
 		return model.Report{}, err
 	}
+	if mc, err := k8s.NewMetricsClient(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag}); err == nil {
+		k8s.CollectMetrics(ctx, mc, namespace, snap)
+	} else {
+		snap.Degraded = append(snap.Degraded, "pod usage unavailable ("+err.Error()+")")
+	}
 	engine := diagnose.NewEngine()
 	findings := engine.Run(snap)
 	findings = diagnose.FilterByWorkload(findings, workload, namespace, snap.PodsByTopOwner())

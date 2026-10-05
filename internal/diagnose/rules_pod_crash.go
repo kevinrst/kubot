@@ -2,6 +2,7 @@ package diagnose
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kevinrst/kubot/internal/k8s"
 	"github.com/kevinrst/kubot/internal/model"
@@ -10,6 +11,8 @@ import (
 type PodCrashLoopRule struct{}
 
 func (PodCrashLoopRule) Name() string { return "pod_crashloop_backoff" }
+
+const crashRecency = 15 * time.Minute
 
 func (PodCrashLoopRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
@@ -23,14 +26,13 @@ func (PodCrashLoopRule) Run(s *k8s.Snapshot) []model.Finding {
 			}
 			lastExit := -1
 			lastReason := ""
+			var lastFinish time.Time
 			if cs.LastTerminationState.Terminated != nil {
 				lastExit = int(cs.LastTerminationState.Terminated.ExitCode)
 				lastReason = cs.LastTerminationState.Terminated.Reason
+				lastFinish = cs.LastTerminationState.Terminated.FinishedAt.Time
 			}
 			crashloop := waiting == "CrashLoopBackOff"
-			// Between backoffs the container sits in Error/Terminated with a
-			// non-zero exit. Same loop, different snapshot instant; 3+ restarts
-			// keeps one-off failures silent.
 			curExit := -1
 			curReason := ""
 			if cs.State.Terminated != nil {
@@ -39,12 +41,16 @@ func (PodCrashLoopRule) Run(s *k8s.Snapshot) []model.Finding {
 				if lastExit == -1 {
 					lastExit, lastReason = curExit, cs.State.Terminated.Reason
 				}
+				if cs.State.Terminated.FinishedAt.Time.After(lastFinish) {
+					lastFinish = cs.State.Terminated.FinishedAt.Time
+				}
 			}
 			// OOMKills loop too, but that rule owns the signal — don't report twice.
 			if lastReason == "OOMKilled" || curReason == "OOMKilled" {
 				continue
 			}
-			repeated := !crashloop && cs.RestartCount >= 3 && (lastExit != 0 || curExit != 0) &&
+			recent := !lastFinish.IsZero() && time.Since(lastFinish) <= crashRecency
+			repeated := !crashloop && cs.RestartCount >= 3 && (lastExit != 0 || curExit != 0) && recent &&
 				waiting != "ContainerCreating" && waiting != "PodInitializing"
 			if !crashloop && !repeated {
 				continue

@@ -22,7 +22,12 @@ func newResourcesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			keep := map[string]bool{"pod_oom_killed": true, "pod_pending": true, "deployment_unavailable": true}
+			keep := map[string]bool{
+				"pod_oom_killed": true, "pod_pending": true,
+				"deployment_unavailable": true, "pod_missing_resources": true,
+				"pod_low_limit": true, "pod_near_limit": true,
+				"deployment_resource_risk": true,
+			}
 			var f []model.Finding
 			for _, i := range rep.Issues {
 				if keep[i.Reason] {

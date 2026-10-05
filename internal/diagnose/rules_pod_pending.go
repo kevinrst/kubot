@@ -123,6 +123,13 @@ func (PodPendingRule) Run(s *k8s.Snapshot) []model.Finding {
 		if pod.Spec.NodeSelector != nil {
 			ev["nodeSelector"] = pod.Spec.NodeSelector
 		}
+		unsched, taints := clusterScheduling(s)
+		if unsched > 0 {
+			ev["unschedulable_nodes"] = unsched
+		}
+		if len(taints) > 0 {
+			ev["node_taints"] = taints
+		}
 		out = append(out, model.Finding{
 			Severity:  sev,
 			Resource:  fmt.Sprintf("pod/%s", pod.Name),
@@ -142,6 +149,26 @@ func reasonSuffix(r string) string {
 		return ""
 	}
 	return ": " + r
+}
+
+// Cluster-wide scheduling context: cordoned nodes and distinct taint keys
+// the pending pod would need to tolerate.
+func clusterScheduling(s *k8s.Snapshot) (int, []string) {
+	unsched := 0
+	seen := map[string]bool{}
+	var taints []string
+	for _, n := range s.Nodes {
+		if n.Spec.Unschedulable {
+			unsched++
+		}
+		for _, t := range n.Spec.Taints {
+			if !seen[t.Key] {
+				seen[t.Key] = true
+				taints = append(taints, t.Key)
+			}
+		}
+	}
+	return unsched, taints
 }
 
 func truncate(s string, n int) string {

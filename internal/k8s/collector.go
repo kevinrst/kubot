@@ -31,8 +31,8 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	collect("replicasets", func() error { return collectReplicaSets(ctx, listOpts, snap, cs, namespace) })
 	collect("services", func() error { return collectServices(ctx, listOpts, snap, cs, namespace) })
 	collect("endpointslices", func() error { return collectEndpointSlices(ctx, listOpts, snap, cs, namespace) })
-	collect("endpoints", func() error { return collectEndpoints(ctx, listOpts, snap, cs, namespace) })
 	collect("events", func() error { return collectEvents(ctx, listOpts, snap, cs, namespace) })
+	collect("pvcs", func() error { return collectPVCs(ctx, listOpts, snap, cs, namespace) })
 	collect("nodes", func() error { return collectNodes(ctx, listOpts, snap, cs, namespace) })
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -40,8 +40,6 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	}
 	return snap, nil
 }
-
-type collectFunc func(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error
 
 func collectPods(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
 	res, err := cs.CoreV1().Pods(ns).List(ctx, opts)
@@ -88,21 +86,21 @@ func collectEndpointSlices(ctx context.Context, opts metav1.ListOptions, snap *S
 	return nil
 }
 
-func collectEndpoints(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
-	res, err := cs.CoreV1().Endpoints(ns).List(ctx, opts)
-	if err != nil {
-		return err
-	}
-	snap.Endpoints = res.Items
-	return nil
-}
-
 func collectEvents(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
 	res, err := cs.CoreV1().Events(ns).List(ctx, opts)
 	if err != nil {
 		return err
 	}
 	snap.Events = res.Items
+	return nil
+}
+
+func collectPVCs(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.CoreV1().PersistentVolumeClaims(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.PVCs = res.Items
 	return nil
 }
 

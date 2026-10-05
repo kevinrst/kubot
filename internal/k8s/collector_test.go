@@ -17,12 +17,13 @@ func TestCollect_fakeClient(t *testing.T) {
 		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "s1", Namespace: "default"}},
 		&corev1.Event{ObjectMeta: metav1.ObjectMeta{Name: "e1", Namespace: "default"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "n1"}},
+		&corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "data", Namespace: "default"}},
 	)
 	snap, err := Collect(context.Background(), cs, "", 10*time.Second)
 	if err != nil {
 		t.Fatalf("Collect: %v", err)
 	}
-	if len(snap.Pods) != 1 || len(snap.Services) != 1 || len(snap.Events) != 1 || len(snap.Nodes) != 1 {
+	if len(snap.Pods) != 1 || len(snap.Services) != 1 || len(snap.Events) != 1 || len(snap.Nodes) != 1 || len(snap.PVCs) != 1 {
 		t.Fatalf("incomplete snapshot: %+v", snap)
 	}
 	if len(snap.Degraded) != 0 {

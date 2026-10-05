@@ -56,7 +56,7 @@ No problems detected for "payment-api".
 Did you mean: payments-api?
 ```
 
-## What it checks (v0.1)
+## What it checks
 
 - CrashLoopBackOff, including the backoff window between restarts
 - OOMKilled, with the memory limit as evidence
@@ -65,8 +65,17 @@ Did you mean: payments-api?
 - Failing readiness/liveness/startup probes (sustained only, Ready pods stay silent)
 - Deployments with unavailable replicas
 - Services whose selector matches no pods
+- Containers missing memory limits or requests
+- Suspiciously low memory limits (under 32Mi)
+- Containers using 80%+ of their memory limit (needs metrics-server, degrades without it)
+- Deployments where half or more pods run without a memory limit
+- Rollouts past their progress deadline
+- Old ReplicaSets still running beside the newest
+- Pending (unbound) PVCs
+- Pods failing to mount volumes
+- Nodes under memory/disk/PID pressure
 
-That's it. Seven checks done well beats thirty done badly. More coming.
+Sixteen checks done well beats thirty done badly. More coming.
 
 ## JSON contract
 

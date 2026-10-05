@@ -18,6 +18,11 @@ func gather(ctx context.Context) (model.Report, *k8s.Snapshot, error) {
 	if err != nil {
 		return model.Report{}, nil, err
 	}
+	if mc, err := k8s.NewMetricsClient(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag}); err == nil {
+		k8s.CollectMetrics(ctx, mc, namespaceFlag, snap)
+	} else {
+		snap.Degraded = append(snap.Degraded, "pod usage unavailable ("+err.Error()+")")
+	}
 	snap.Context = k8s.ResolveContextName(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag})
 	engine := diagnose.NewEngine()
 	findings := engine.Run(snap)
