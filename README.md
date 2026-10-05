@@ -25,6 +25,8 @@ kubot resources                    # OOM + pending + deployment problems
 kubot networking                   # service + probe problems
 kubot check --fail-on=critical     # CI gate, exits non-zero when sick
 kubot inspect --json               # machine-readable report
+kubot ask "why is it slow?"        # AI reading of the same findings
+kubot explain                      # report plus an AI reading of it
 kubot mcp                          # serve findings to AI agents over MCP
 ```
 
@@ -104,10 +106,27 @@ Parse `--json`, not the terminal output. The human report is unstable by design;
 
 `0` clean · `1` warning · `2` critical · `3` connection failure · `64` bad flags. `inspect` exits 0 by default; gate with `--fail-on` or use `check` in CI.
 
+## AI layer (optional)
+
+`ask` and `explain` put a plain-language reading on top of the same deterministic findings. The model narrates; it never diagnoses. Before sending anything, kubot names the provider and model and asks — local endpoints skip the prompt, `--yes` skips it in scripts.
+
+```sh
+export OPENAI_API_KEY=sk-…        # or ANTHROPIC_API_KEY, or GEMINI_API_KEY
+kubot ask "what needs attention?"
+kubot explain payments-api
+```
+
+| Variable | Purpose |
+|---|---|
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Enables `ask` / `explain` (auto-detected in that order) |
+| `KUBOT_AI_PROVIDER` | `openai`, `anthropic`, or `gemini` — pick one explicitly |
+| `KUBOT_AI_MODEL` | Model override (defaults work, override for newer ones) |
+| `KUBOT_AI_BASE_URL` | OpenAI-compatible endpoint (Ollama, vLLM, OpenRouter, …) |
+| `KUBOT_AI_API_KEY` | Key override for whichever provider is selected, plus optional base URL for local models |
+
 ## MCP
 
 `kubot mcp` speaks the Model Context Protocol on stdio: `inspect` and `why` tools, a `diagnose` prompt, a `kubot://schema` resource. The agent narrates; kubot provides the facts. Point it at a cluster:
-
 ```json
 {
   "mcpServers": {

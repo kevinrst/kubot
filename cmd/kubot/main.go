@@ -46,6 +46,8 @@ func main() {
 	root.AddCommand(newNetworkingCmd())
 	root.AddCommand(newCheckCmd())
 	root.AddCommand(newMCPCmd())
+	root.AddCommand(newAskCmd())
+	root.AddCommand(newExplainCmd())
 
 	root.PersistentFlags().StringVar(&kubeconfigFlag, "kubeconfig", "",
 		"path to kubeconfig (default: KUBECONFIG or ~/.kube/config)")
