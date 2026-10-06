@@ -30,7 +30,7 @@ func newResourcesCmd() *cobra.Command {
 			}
 			out := cmd.OutOrStdout()
 			if !asJSON {
-				render.PrintResourcesTable(out, resourceRows(snap), render.UseColor(noColorFlag), 50)
+				render.PrintResourcesTable(out, resourceRows(snap), render.UseColor(noColorFlag), 50, terminalWidth())
 				fmt.Fprintln(out)
 			}
 			keep := map[string]bool{

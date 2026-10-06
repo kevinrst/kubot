@@ -129,16 +129,47 @@ func TestScoreNamespaceLabel(t *testing.T) {
 }
 
 func TestResourcesTable(t *testing.T) {
+
 	rows := []ResourceRow{
 		{Pod: "default/a", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "64Mi", MemUse: "53Mi", UseRatio: 0.83, Hot: true},
 		{Pod: "default/b", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "—", MemUse: "—", UseRatio: -1},
 	}
 	var buf bytes.Buffer
-	PrintResourcesTable(&buf, rows, false, 50)
+	PrintResourcesTable(&buf, rows, false, 50, 0)
 	out := buf.String()
-	for _, want := range []string{"POD", "CONTAINER", "USE%", "83%", "default/a", "default/b"} {
+	for _, want := range []string{"POD", "CONTAINER", "USE%", "83%", "default/a", "default/b", "╭", "╰"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("table missing %q:\n%s", want, out)
 		}
+	}
+}
+
+func TestEventsTable(t *testing.T) {
+	rows := []EventRow{
+		{Namespace: "default", Object: "Pod/crashy-x", Reason: "BackOff", Count: 41, Message: "Back-off restarting failed container"},
+		{Namespace: "default", Object: "Pod/hungry", Reason: "FailedScheduling", Count: 1, Message: "0/1 nodes are available"},
+	}
+	var buf bytes.Buffer
+	PrintEventsTable(&buf, rows, false, 20, 120)
+	out := buf.String()
+	for _, want := range []string{"NS", "OBJECT", "REASON", "COUNT", "MESSAGE", "x41", "BackOff", "FailedScheduling"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("events table missing %q:\n%s", want, out)
+		}
+	}
+	// Most repeated first.
+	if strings.Index(out, "x41") > strings.Index(out, "FailedScheduling") {
+		t.Errorf("events not ordered by count:\n%s", out)
+	}
+	// Long messages truncate with … instead of wrapping mid-word.
+	long := []EventRow{{Namespace: "n", Object: "Pod/x", Reason: "R", Count: 1, Message: strings.Repeat("m", 500)}}
+	buf.Reset()
+	PrintEventsTable(&buf, long, false, 20, 120)
+	if !strings.Contains(buf.String(), "…") {
+		t.Errorf("long message should truncate:\n%s", buf.String())
+	}
+	// Long pod names keep head and tail, cut the middle hash.
+	if got := cutMiddle("Pod/unready-56f8fc5f69-gqqm7", 24); got != "Pod/unready-56f…69-gqqm7" {
+		t.Errorf("cutMiddle = %q", got)
 	}
 }

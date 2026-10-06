@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"text/tabwriter"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 type ResourceRow struct {
@@ -18,7 +20,9 @@ type ResourceRow struct {
 	Hot       bool
 }
 
-func PrintResourcesTable(w io.Writer, rows []ResourceRow, color bool, maxRows int) {
+const useCol = 6
+
+func PrintResourcesTable(w io.Writer, rows []ResourceRow, color bool, maxRows, width int) {
 	st := styler{on: color}
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].Pod != rows[j].Pod {
@@ -31,25 +35,39 @@ func PrintResourcesTable(w io.Writer, rows []ResourceRow, color bool, maxRows in
 	if maxRows > 0 && len(rows) > maxRows {
 		shown, hidden = rows[:maxRows], len(rows)-maxRows
 	}
-	tw := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, st.dim("POD\tCONTAINER\tCPU-REQ\tMEM-REQ\tMEM-LIMIT\tMEM-USE\tUSE%"))
+	t, p := baseTable(color)
+	t.Headers("POD", "CONTAINER", "CPU-REQ", "MEM-REQ", "MEM-LIMIT", "MEM-USE", "USE%").
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == table.HeaderRow {
+				return p.head()
+			}
+			if col == useCol && row < len(shown) && shown[row].Hot {
+				return p.warn()
+			}
+			if shown[row].MemLimit == "-" && col == 4 {
+				return p.dim()
+			}
+			return p.plain()
+		})
 	for _, r := range shown {
-		use := r.MemUse
 		pct := "-"
 		if r.UseRatio >= 0 {
 			pct = fmt.Sprintf("%.0f%%", r.UseRatio*100)
-			if r.Hot {
-				pct = st.warn(pct)
-			}
 		}
 		limit := r.MemLimit
 		if limit == "-" {
-			limit = st.dim("none")
+			limit = "none"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			r.Pod, r.Container, r.CPUReq, r.MemReq, limit, use, pct)
+		t.Row(r.Pod, r.Container, r.CPUReq, r.MemReq, limit, r.MemUse, pct)
 	}
-	tw.Flush()
+	out := t.Render()
+	if width > 0 {
+		if w := lipgloss.Width(out); w > width-2 {
+			t.Width(width - 2).Wrap(true)
+			out = t.Render()
+		}
+	}
+	fmt.Fprintln(w, out)
 	if hidden > 0 {
 		fmt.Fprintf(w, "%s\n", st.dim(fmt.Sprintf("… and %d more containers (use -n to narrow)", hidden)))
 	}

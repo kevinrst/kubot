@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/spf13/cobra"
 
@@ -26,54 +25,32 @@ func newEventsCmd() *cobra.Command {
 			if asJSON {
 				return render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: true, Width: terminalWidth()})
 			}
-			type row struct {
-				ns, kind, name, reason string
-				count                  int32
-				msg                    string
-			}
-			var rows []row
+			var rows []render.EventRow
 			for _, e := range snap.Events {
 				if e.Type != "Warning" {
 					continue
 				}
-				rows = append(rows, row{
-					ns: e.InvolvedObject.Namespace, kind: e.InvolvedObject.Kind,
-					name: e.InvolvedObject.Name, reason: e.Reason,
-					count: e.Count, msg: e.Message,
-				})
-			}
-			sort.Slice(rows, func(i, j int) bool {
-				if rows[i].count != rows[j].count {
-					return rows[i].count > rows[j].count
+				ns := e.InvolvedObject.Namespace
+				if ns == "" {
+					ns = "-"
 				}
-				return rows[i].name < rows[j].name
-			})
-			if len(rows) > 20 {
-				rows = rows[:20]
+				rows = append(rows, render.EventRow{
+					Namespace: ns,
+					Object:    fmt.Sprintf("%s/%s", e.InvolvedObject.Kind, e.InvolvedObject.Name),
+					Reason:    e.Reason,
+					Count:     e.Count,
+					Message:   e.Message,
+				})
 			}
 			out := cmd.OutOrStdout()
 			if len(rows) == 0 {
 				fmt.Fprintln(out, "No warning events.")
 				return nil
 			}
-			for _, r := range rows {
-				ns := r.ns
-				if ns == "" {
-					ns = "-"
-				}
-				fmt.Fprintf(out, "%-12s %-10s %-30s %-22s x%d\n  %s\n",
-					ns, r.kind, r.name, r.reason, r.count, truncateMsg(r.msg, 220))
-			}
+			render.PrintEventsTable(out, rows, render.UseColor(noColorFlag), 20, terminalWidth())
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "machine-readable JSON output")
 	return cmd
-}
-
-func truncateMsg(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "…"
 }
