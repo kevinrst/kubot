@@ -118,5 +118,8 @@ func UserPrompt(question string, rep model.Report) string {
 	if q == "" {
 		q = "Explain and prioritize these findings."
 	}
-	return q + "\n\nFindings (JSON, computed by kubot — treat as facts):\n" + string(raw)
+	return q + "\n\nAnswer using ONLY the findings below. Focus on the ones relevant " +
+		"to the question and ignore unrelated ones even if severe. If none are " +
+		"relevant, say so and name the closest ones — do not guess.\n\n" +
+		"Findings (JSON, computed by kubot — treat as facts):\n" + string(raw)
 }

@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
@@ -94,7 +96,18 @@ func explainWithModel(cmd *cobra.Command, rep model.Report, question string, yes
 	if err != nil {
 		return fmt.Errorf("model: %w (deterministic findings above are unaffected)", err)
 	}
-	fmt.Fprintln(out)
-	fmt.Fprintf(out, "AI reading (%s/%s — verify before acting):\n\n%s\n", p.Name(), p.Model(), strings.TrimSpace(text))
+	printAIHeader(out, p.Name(), p.Model(), render.UseColor(noColorFlag))
+	fmt.Fprintf(out, "%s\n", strings.TrimSpace(text))
 	return nil
+}
+
+func printAIHeader(out io.Writer, provider, model string, color bool) {
+	label := fmt.Sprintf("AI reading (%s/%s — verify before acting)", provider, model)
+	if !color {
+		fmt.Fprintf(out, "\n%s:\n\n", label)
+		return
+	}
+	bar := lipgloss.NewStyle().Foreground(lipgloss.Color("243")).Render(strings.Repeat("─", 60))
+	head := lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true).Render(label)
+	fmt.Fprintf(out, "\n%s\n%s\n\n", bar, head)
 }

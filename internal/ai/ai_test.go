@@ -139,6 +139,9 @@ func TestUserPromptCarriesFindings(t *testing.T) {
 	if !strings.Contains(u, "why?") || !strings.Contains(u, "pod_oom_killed") {
 		t.Fatalf("prompt missing question or findings: %q", u)
 	}
+	if !strings.Contains(u, "relevant") {
+		t.Fatalf("prompt must demand focus on relevant findings: %q", u)
+	}
 	if !strings.Contains(SystemPrompt(), "never add new ones") {
 		t.Fatal("system prompt must forbid invention")
 	}
