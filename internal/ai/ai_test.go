@@ -115,6 +115,23 @@ func TestResolveUnknownProvider(t *testing.T) {
 	}
 }
 
+func TestResolveModelOverride(t *testing.T) {
+	t.Setenv("KUBOT_AI_PROVIDER", "")
+	t.Setenv("KUBOT_AI_API_KEY", "")
+	t.Setenv("KUBOT_AI_MODEL", "gemini-2.0-flash")
+	t.Setenv("KUBOT_AI_BASE_URL", "")
+	t.Setenv("OPENAI_API_KEY", "")
+	t.Setenv("ANTHROPIC_API_KEY", "")
+	t.Setenv("GEMINI_API_KEY", "k")
+	p, err := Resolve()
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if p.Name() != "gemini" || p.Model() != "gemini-2.0-flash" {
+		t.Fatalf("got %s/%s", p.Name(), p.Model())
+	}
+}
+
 func TestUserPromptCarriesFindings(t *testing.T) {
 	rep := model.Report{SchemaVersion: "0.1.0", Status: "critical",
 		Issues: []model.Finding{{Severity: "critical", Resource: "pod/x", Reason: "pod_oom_killed", Message: "OOM"}}}
@@ -122,7 +139,12 @@ func TestUserPromptCarriesFindings(t *testing.T) {
 	if !strings.Contains(u, "why?") || !strings.Contains(u, "pod_oom_killed") {
 		t.Fatalf("prompt missing question or findings: %q", u)
 	}
-	if !strings.Contains(SystemPrompt(), "never invent") {
+	if !strings.Contains(SystemPrompt(), "never add new ones") {
 		t.Fatal("system prompt must forbid invention")
+	}
+	for _, want := range []string{"NO markdown", "at most three", "OMIT", "worst first"} {
+		if !strings.Contains(SystemPrompt(), want) {
+			t.Errorf("system prompt missing shape rule %q", want)
+		}
 	}
 }

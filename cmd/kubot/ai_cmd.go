@@ -83,10 +83,10 @@ func explainWithModel(cmd *cobra.Command, rep model.Report, question string, yes
 		if !term.IsTerminal(int(os.Stdin.Fd())) {
 			return fmt.Errorf("not a terminal: pass --yes to send findings to %s", p.Name())
 		}
-		fmt.Fprintf(out, "Send the findings to %s (%s) for explanation? [y/N] ", p.Name(), p.Model())
+		fmt.Fprintf(os.Stderr, "Send the findings to %s (%s) for explanation? [y/N] ", p.Name(), p.Model())
 		line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 		if strings.ToLower(strings.TrimSpace(line)) != "y" {
-			fmt.Fprintln(out, "Aborted. The deterministic report above still stands.")
+			fmt.Fprintln(os.Stderr, "Aborted. The deterministic report above still stands.")
 			return nil
 		}
 	}

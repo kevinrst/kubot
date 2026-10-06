@@ -8,9 +8,6 @@ import (
 	"github.com/kevinrst/kubot/internal/model"
 )
 
-// Resolve picks a provider from the environment. Keys are never flags.
-// KUBOT_AI_PROVIDER selects explicitly; otherwise the first configured key
-// wins (OpenAI, then Anthropic, then Gemini).
 func Resolve() (Provider, error) {
 	want := strings.ToLower(envFirst("KUBOT_AI_PROVIDER"))
 	model := envFirst("KUBOT_AI_MODEL")
@@ -25,8 +22,6 @@ func Resolve() (Provider, error) {
 	case "gemini":
 		return geminiProvider(firstNonEmpty(key, envFirst("GEMINI_API_KEY", "GOOGLE_API_KEY")), model, base)
 	case "":
-		// auto-detect: explicit key wins, else first provider key found.
-		// A lone KUBOT_AI_API_KEY (+ optional BASE_URL) means OpenAI-compatible.
 		if key != "" {
 			return openAIProvider(key, model, firstNonEmpty(base, "https://api.openai.com/v1"))
 		}
@@ -76,7 +71,7 @@ func geminiProvider(key, model, base string) (Provider, error) {
 		return nil, fmt.Errorf("gemini needs a key: GEMINI_API_KEY or KUBOT_AI_API_KEY")
 	}
 	if model == "" {
-		model = "gemini-2.5-flash"
+		model = "gemini-3.8-flash"
 	}
 	if base == "" {
 		base = "https://generativelanguage.googleapis.com"
@@ -93,12 +88,27 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-// SystemPrompt instructs the model to narrate findings, never invent them.
+// SystemPrompt constrains the model to narrating: fixed plain-text shape,
+// worst first, at most three findings, and no causal claims beyond what the
+// evidence names. Without this the model restates the whole inventory.
 func SystemPrompt() string {
 	return "You explain Kubernetes health findings computed deterministically by kubot. " +
-		"Treat the provided findings as facts: never invent problems, causes, or numbers not present. " +
-		"Carry every caveat into your advice. Prioritize by severity (critical first). " +
-		"Keep it short: what is wrong, likely cause, what to check next."
+		"The findings are facts, not guesses. Explain them; never add new ones.\n\n" +
+		"Write PLAIN TEXT in this exact shape — NO markdown (no #, no *, no bullets, " +
+		"no bold, no tables, no code fences):\n\n" +
+		"  <one sentence on overall health>\n\n" +
+		"  <then the findings that matter, worst first, at most three, each as:>\n\n" +
+		"  <workload and problem in one line, with the concrete numbers from the data>\n\n" +
+		"  Why this is happening:\n" +
+		"  <one line — ONLY when the evidence names a cause (exit code, OOMKilled, " +
+		"FailedScheduling message); otherwise OMIT this block entirely. Never guess.>\n\n" +
+		"  Check next:\n" +
+		"  <one line: the concrete next step>\n\n" +
+		"Rules:\n" +
+		"- Every number comes from the findings. Never invent one.\n" +
+		"- Carry every caveat into the advice.\n" +
+		"- If nothing is broken, say so in one line and stop.\n" +
+		"- Be brief: short lines, blank line between blocks."
 }
 
 // UserPrompt grounds a question in one inspection report.
