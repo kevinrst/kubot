@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mattn/go-runewidth"
+
 	"github.com/kevinrst/kubot/internal/model"
 )
 
@@ -129,7 +131,6 @@ func TestScoreNamespaceLabel(t *testing.T) {
 }
 
 func TestResourcesTable(t *testing.T) {
-
 	rows := []ResourceRow{
 		{Pod: "default/a", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "64Mi", MemUse: "53Mi", UseRatio: 0.83, Hot: true},
 		{Pod: "default/b", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "—", MemUse: "—", UseRatio: -1},
@@ -145,6 +146,7 @@ func TestResourcesTable(t *testing.T) {
 }
 
 func TestEventsTable(t *testing.T) {
+
 	rows := []EventRow{
 		{Namespace: "default", Object: "Pod/crashy-x", Reason: "BackOff", Count: 41, Message: "Back-off restarting failed container"},
 		{Namespace: "default", Object: "Pod/hungry", Reason: "FailedScheduling", Count: 1, Message: "0/1 nodes are available"},
@@ -171,5 +173,22 @@ func TestEventsTable(t *testing.T) {
 	// Long pod names keep head and tail, cut the middle hash.
 	if got := cutMiddle("Pod/unready-56f8fc5f69-gqqm7", 24); got != "Pod/unready-56f…69-gqqm7" {
 		t.Errorf("cutMiddle = %q", got)
+	}
+}
+
+func TestResourcesTable_evenWidths(t *testing.T) {
+	rows := []ResourceRow{
+		{Pod: "default/payments-api-68ffdf658-m2wq4", Container: "api", CPUReq: "-", MemReq: "64Mi", MemLimit: "64Mi", MemUse: "-", UseRatio: -1},
+		{Pod: "default/steady-74f69994db-szhdg", Container: "app", CPUReq: "-", MemReq: "64Mi", MemLimit: "64Mi", MemUse: "53Mi", UseRatio: 0.83, Hot: true},
+		{Pod: "default/tiny-d967b5d8b-rkxnf", Container: "app", CPUReq: "-", MemReq: "16Mi", MemLimit: "16Mi", MemUse: "0Mi", UseRatio: 0.02},
+	}
+	var buf bytes.Buffer
+	PrintResourcesTable(&buf, rows, false, 50, 120)
+	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+	want := runewidth.StringWidth(lines[0])
+	for i, l := range lines[1:] {
+		if got := runewidth.StringWidth(l); got != want {
+			t.Errorf("line %d width %d, want %d: %q", i+1, got, want, l)
+		}
 	}
 }

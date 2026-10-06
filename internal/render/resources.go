@@ -49,6 +49,15 @@ func PrintResourcesTable(w io.Writer, rows []ResourceRow, color bool, maxRows, w
 			}
 			return p.plain()
 		})
+	podW := 60
+	if width > 0 {
+		if w := width - 65; w < podW {
+			podW = w
+			if podW < 24 {
+				podW = 24
+			}
+		}
+	}
 	for _, r := range shown {
 		pct := "-"
 		if r.UseRatio >= 0 {
@@ -58,16 +67,13 @@ func PrintResourcesTable(w io.Writer, rows []ResourceRow, color bool, maxRows, w
 		if limit == "-" {
 			limit = "none"
 		}
-		t.Row(r.Pod, r.Container, r.CPUReq, r.MemReq, limit, r.MemUse, pct)
+		t.Row(
+			cutMiddle(r.Pod, podW),
+			cutEnd(r.Container, 12),
+			r.CPUReq, r.MemReq, limit, r.MemUse, pct,
+		)
 	}
-	out := t.Render()
-	if width > 0 {
-		if w := lipgloss.Width(out); w > width-2 {
-			t.Width(width - 2).Wrap(true)
-			out = t.Render()
-		}
-	}
-	fmt.Fprintln(w, out)
+	fmt.Fprintln(w, t.Render())
 	if hidden > 0 {
 		fmt.Fprintf(w, "%s\n", st.dim(fmt.Sprintf("… and %d more containers (use -n to narrow)", hidden)))
 	}
