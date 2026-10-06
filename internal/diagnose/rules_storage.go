@@ -2,6 +2,7 @@ package diagnose
 
 import (
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -52,7 +53,14 @@ func (PodMountFailureRule) Run(s *k8s.Snapshot) []model.Finding {
 	var out []model.Finding
 	for _, pod := range s.Pods {
 		msg, count := mountFailure(s, pod.Namespace, pod.Name)
-		if count < minEventRepeats {
+		if count == 0 {
+			continue
+		}
+		// Fresh event objects restart the counter from 1 after the 1h expiry,
+		// so a low count alone can't prove transience: an old pod failing to
+		// mount for longer than the backoff ceiling is sustained by definition.
+		old := time.Since(pod.CreationTimestamp.Time) > 15*time.Minute
+		if count < minEventRepeats && !old {
 			continue
 		}
 		out = append(out, model.Finding{

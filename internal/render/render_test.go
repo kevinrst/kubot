@@ -116,6 +116,7 @@ func TestScoreHiddenWhenScoped(t *testing.T) {
 }
 
 func TestScoreNamespaceLabel(t *testing.T) {
+
 	rep := testReport()
 	rep.Cluster.Namespace = "default"
 	var buf bytes.Buffer
@@ -124,5 +125,20 @@ func TestScoreNamespaceLabel(t *testing.T) {
 	}
 	if !strings.Contains(buf.String(), "Namespace health:") {
 		t.Errorf("namespaced view mislabeled:\n%s", buf.String())
+	}
+}
+
+func TestResourcesTable(t *testing.T) {
+	rows := []ResourceRow{
+		{Pod: "default/a", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "64Mi", MemUse: "53Mi", UseRatio: 0.83, Hot: true},
+		{Pod: "default/b", Container: "app", CPUReq: "—", MemReq: "—", MemLimit: "—", MemUse: "—", UseRatio: -1},
+	}
+	var buf bytes.Buffer
+	PrintResourcesTable(&buf, rows, false, 50)
+	out := buf.String()
+	for _, want := range []string{"POD", "CONTAINER", "USE%", "83%", "default/a", "default/b"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("table missing %q:\n%s", want, out)
+		}
 	}
 }

@@ -59,6 +59,16 @@ func (s *Snapshot) ReadyEndpoints(namespace, svcName string) (ready, total int) 
 	return ready, total
 }
 
+// Memory usage for one container. False without metrics-server.
+func (s *Snapshot) UsageOf(namespace, pod, container string) (int64, bool) {
+	for _, u := range s.Usage {
+		if u.Namespace == namespace && u.Pod == pod && u.Container == container {
+			return u.MemoryBytes, true
+		}
+	}
+	return 0, false
+}
+
 // Pod names keyed by workload name (deployment, statefulset, …).
 func (s *Snapshot) PodsByTopOwner() map[string][]string {
 	m := map[string][]string{}

@@ -16,7 +16,7 @@ import (
 var suspiciousMemoryFloor = resource.MustParse("32Mi")
 
 // Usage at/above this share of the memory limit means OOM risk.
-const nearLimitRatio = 0.8
+const NearLimitRatio = 0.8
 
 type PodMissingResourcesRule struct{}
 
@@ -113,7 +113,7 @@ func (PodNearLimitRule) Run(s *k8s.Snapshot) []model.Finding {
 				continue
 			}
 			ratio := float64(used) / float64(limit.Value())
-			if ratio < nearLimitRatio {
+			if ratio < NearLimitRatio {
 				continue
 			}
 			out = append(out, model.Finding{

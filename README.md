@@ -21,7 +21,7 @@ kubot inspect                      # whole cluster, all namespaces
 kubot inspect payments-api         # one workload
 kubot why payments-api             # why is it unhealthy
 kubot events                       # warning events by count
-kubot resources                    # OOM + pending + deployment problems
+kubot resources                    # per-container usage table + resource problems
 kubot networking                   # service + probe problems
 kubot check --fail-on=critical     # CI gate, exits non-zero when sick
 kubot inspect --json               # machine-readable report
