@@ -62,7 +62,7 @@ main() {
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT INT TERM
 
   echo "downloading kubot $tag ($plat)…"
-  curl -fsSL -o "$tmp/pkg.${arc}" "$url"
+  curl -fsSL -o "$tmp/${base}.${arc}" "$url"
   curl -fsSL -o "$tmp/checksums.txt" "https://github.com/$REPO/releases/download/${tag}/checksums.txt"
 
   (cd "$tmp" && grep "  ${base}.${arc}\$" checksums.txt | sha256check) || {
@@ -70,9 +70,9 @@ main() {
   }
 
   if [ "$arc" = "zip" ]; then
-    (cd "$tmp" && unzip -o -q "pkg.zip")
+    (cd "$tmp" && unzip -o -q "${base}.zip")
   else
-    tar -xzf "$tmp/pkg.tar.gz" -C "$tmp"
+    tar -xzf "$tmp/${base}.tar.gz" -C "$tmp"
   fi
   [ -f "$tmp/$bin_name" ] || { echo "archive missing $bin_name" >&2; exit 1; }
 
