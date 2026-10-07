@@ -133,6 +133,8 @@ reason = "batch job, intentionally bare"
 
 Muted findings stay visible (marked with the reason) and in `--json`, but never move the exit code or health score. Rules without a reason are rejected — write why. Credential-shaped keys are refused outright.
 
+Every finding has a reference page under [`docs/findings/`](docs/findings/README.md) — what it observed, how to verify it yourself with read-only kubectl, and a pasteable ignore block.
+
 ## AI layer (optional)
 
 `ask` and `explain` put a plain-language reading on top of the same deterministic findings. The model narrates; it never diagnoses. Before sending anything, kubot names the provider and model and asks — local endpoints skip the prompt, `--yes` skips it in scripts.
@@ -171,6 +173,8 @@ go build ./...
 go test ./...
 go run ./tools/schemagen   # regenerate schema/ from the Go types after changing them
 ```
+
+Full docs live in [`docs/`](docs/README.md) — install, commands, config, JSON, MCP, AI, findings, troubleshooting, architecture.
 
 Status: early. Expect sharp edges.
 

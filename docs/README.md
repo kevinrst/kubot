@@ -1,0 +1,11 @@
+# kubot docs
+
+- [Install](install.md) — go install, curl script, first connection
+- [Commands](commands.md) — every command, flags, and exit codes
+- [Configuration](configuration.md) — `.kubot.toml` suppression contract
+- [JSON contract](json.md) — the versioned machine-readable output
+- [MCP](mcp.md) — serve findings to AI agents
+- [AI layer](ai.md) — `ask`/`explain`, providers, disclosure rules
+- [Findings](findings/README.md) — one reference page per diagnosis
+- [Troubleshooting](troubleshooting.md) — common problems and what they mean
+- [Architecture](architecture.md) — how the codebase fits together
