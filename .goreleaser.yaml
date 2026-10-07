@@ -1,5 +1,3 @@
-# Minimal release config. Grows toward pgbot's full path (Homebrew tap,
-# Docker images, SBOMs, cosign signing) after v1 proves itself.
 version: 2
 
 builds:
