@@ -4,9 +4,15 @@ A CLI that diagnoses Kubernetes instead of making you dig through it.
 
 `kubectl get pods` says CrashLoopBackOff. kubot tells you the container OOMKilled on a 64Mi limit, 44 restarts, exit 137 — and what to check next.
 
-Read-only. Deterministic. For humans and AI agents.
+Read-only. Deterministic. For humans and AI agents. [Apache-2.0](LICENSE).
 
 ## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
+```
+
+Or build from source (needs Go):
 
 ```sh
 go install github.com/kevinrst/kubot/cmd/kubot@latest
@@ -146,3 +152,7 @@ go run ./tools/schemagen   # regenerate schema/ from the Go types after changing
 ```
 
 Status: early. Expect sharp edges.
+
+## License
+
+[Apache-2.0](LICENSE).

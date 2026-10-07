@@ -94,6 +94,11 @@ func explainWithModel(cmd *cobra.Command, rep model.Report, question string, yes
 	}
 	text, err := p.Complete(cmd.Context(), ai.SystemPrompt(), ai.UserPrompt(question, rep))
 	if err != nil {
+		// Model ids retire without warning (we've lived this twice): point at
+		// the override instead of leaving a bare 404.
+		if strings.Contains(err.Error(), "404") {
+			return fmt.Errorf("model: %w (deterministic findings above are unaffected; the model id may be retired — retry with KUBOT_AI_MODEL=<id>)", err)
+		}
 		return fmt.Errorf("model: %w (deterministic findings above are unaffected)", err)
 	}
 	printAIHeader(out, p.Name(), p.Model(), render.UseColor(noColorFlag))
