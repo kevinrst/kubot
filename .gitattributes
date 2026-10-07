@@ -1,0 +1,11 @@
+# Normalize line endings: Go code, JSON schemas, configs, and shell scripts
+# must stay LF everywhere (Windows checkouts with autocrlf would otherwise
+# break byte comparisons like the schema drift test, and CRLF breaks sh).
+* text=auto
+*.go text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.toml text eol=lf

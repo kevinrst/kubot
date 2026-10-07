@@ -3,6 +3,7 @@ package model
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -15,6 +16,8 @@ func TestSchema_matchesModel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read committed schema: %v (run `go run ./tools/schemagen`)", err)
 	}
+	// Checkouts with CRLF conversion must not fail the drift guard.
+	got = []byte(strings.ReplaceAll(string(got), "\r\n", "\n"))
 	if string(got) != string(want) {
 		t.Fatalf("committed schema %s drifts from model types — run `go run ./tools/schemagen`", path)
 	}
