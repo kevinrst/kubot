@@ -117,6 +117,18 @@ func TestScoreHiddenWhenScoped(t *testing.T) {
 	}
 }
 
+func TestDegradedAnnounced(t *testing.T) {
+	rep := testReport()
+	rep.Degraded = []string{"events: forbidden"}
+	var buf bytes.Buffer
+	if err := PrintText(&buf, rep, false, Options{Width: 100}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), "unavailable: events: forbidden") {
+		t.Errorf("degraded collectors must be announced:\n%s", buf.String())
+	}
+}
+
 func TestScoreNamespaceLabel(t *testing.T) {
 
 	rep := testReport()

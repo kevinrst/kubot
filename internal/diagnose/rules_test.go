@@ -7,6 +7,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -510,5 +512,130 @@ func TestClusterScheduling(t *testing.T) {
 	n, taints := clusterScheduling(s)
 	if n != 1 || len(taints) != 1 || taints[0] != "gpu" {
 		t.Fatalf("got %d %v", n, taints)
+	}
+}
+
+func TestStatefulSetUnavailable(t *testing.T) {
+	rep := int32(2)
+	s := &k8s.Snapshot{StatefulSets: []appsv1.StatefulSet{{
+		ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "default"},
+		Spec:       appsv1.StatefulSetSpec{Replicas: &rep},
+		Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+	}}}
+	got := (StatefulSetUnavailableRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "statefulset_unavailable" {
+		t.Fatalf("expected unavailable statefulset, got %+v", got)
+	}
+	s.StatefulSets[0].Status.ReadyReplicas = 2
+	if got := (StatefulSetUnavailableRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("ready statefulset must be silent, got %+v", got)
+	}
+}
+
+func TestDaemonSetUnavailable(t *testing.T) {
+	s := &k8s.Snapshot{DaemonSets: []appsv1.DaemonSet{{
+		ObjectMeta: metav1.ObjectMeta{Name: "agent", Namespace: "default"},
+		Status:     appsv1.DaemonSetStatus{DesiredNumberScheduled: 1, NumberReady: 0, NumberUnavailable: 1},
+	}}}
+	got := (DaemonSetUnavailableRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "daemonset_unavailable" {
+		t.Fatalf("expected unavailable daemonset, got %+v", got)
+	}
+	s.DaemonSets[0].Status.NumberUnavailable = 0
+	s.DaemonSets[0].Status.NumberReady = 1
+	if got := (DaemonSetUnavailableRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("ready daemonset must be silent, got %+v", got)
+	}
+}
+
+func ingressFixture() *networkingv1.Ingress {
+	pathType := networkingv1.PathTypePrefix
+	return &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "shop", Namespace: "default"},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{{
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: []networkingv1.HTTPIngressPath{{
+							Path:     "/",
+							PathType: &pathType,
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: "shop-svc",
+									Port: networkingv1.ServiceBackendPort{Number: 80},
+								},
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+}
+
+func TestIngressNoBackends_missingService(t *testing.T) {
+	s := &k8s.Snapshot{Ingresses: []networkingv1.Ingress{*ingressFixture()}}
+	got := (IngressNoBackendsRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "ingress_no_backends" {
+		t.Fatalf("expected missing backend, got %+v", got)
+	}
+}
+
+func TestIngressNoBackends_readyServiceSilent(t *testing.T) {
+	ready := true
+	s := &k8s.Snapshot{
+		Ingresses: []networkingv1.Ingress{*ingressFixture()},
+		Services: []corev1.Service{{
+			ObjectMeta: metav1.ObjectMeta{Name: "shop-svc", Namespace: "default"},
+			Spec:       corev1.ServiceSpec{Selector: map[string]string{"app": "shop"}},
+		}},
+		EndpointSlices: []discoveryv1.EndpointSlice{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "shop-1", Namespace: "default",
+				Labels: map[string]string{discoveryv1.LabelServiceName: "shop-svc"},
+			},
+			Endpoints: []discoveryv1.Endpoint{{Conditions: discoveryv1.EndpointConditions{Ready: &ready}}},
+		}},
+	}
+	if got := (IngressNoBackendsRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("ready backend must be silent, got %+v", got)
+	}
+}
+
+func TestIngressUnknownClass(t *testing.T) {
+	class := "does-not-exist"
+	ing := ingressFixture()
+	ing.Spec.IngressClassName = &class
+	s := &k8s.Snapshot{Ingresses: []networkingv1.Ingress{*ing}}
+	got := (IngressClassRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "ingress_unknown_class" {
+		t.Fatalf("expected unknown class, got %+v", got)
+	}
+	ing.Spec.IngressClassName = nil
+	s2 := &k8s.Snapshot{
+		Ingresses: []networkingv1.Ingress{*ing},
+		IngressClasses: []networkingv1.IngressClass{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "nginx",
+				Annotations: map[string]string{"ingressclass.kubernetes.io/is-default-class": "true"},
+			},
+		}},
+	}
+	if got := (IngressClassRule{}).Run(s2); len(got) != 0 {
+		t.Fatalf("default class present must be silent, got %+v", got)
+	}
+}
+
+func TestIngressTLSSecretMissing(t *testing.T) {
+	ing := ingressFixture()
+	ing.Spec.TLS = []networkingv1.IngressTLS{{Hosts: []string{"shop.example.com"}, SecretName: "shop-tls"}}
+	s := &k8s.Snapshot{Ingresses: []networkingv1.Ingress{*ing}}
+	got := (IngressTLSSecretRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "ingress_tls_secret_missing" {
+		t.Fatalf("expected missing tls secret, got %+v", got)
+	}
+	s.Secrets = []corev1.Secret{{ObjectMeta: metav1.ObjectMeta{Name: "shop-tls", Namespace: "default"}}}
+	if got := (IngressTLSSecretRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("present secret must be silent, got %+v", got)
 	}
 }

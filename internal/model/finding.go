@@ -40,6 +40,7 @@ type Report struct {
 	Status        string      `json:"status"` // ok|warning|critical
 	Issues        []Finding   `json:"issues"`
 	Checked       []string    `json:"checked,omitempty"`
+	Degraded      []string    `json:"degraded,omitempty"` // collectors that failed; partial data
 }
 
 func OverallStatus(findings []Finding) string {

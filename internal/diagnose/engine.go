@@ -3,6 +3,8 @@ package diagnose
 import (
 	"sort"
 
+	networkingv1 "k8s.io/api/networking/v1"
+
 	"github.com/kevinrst/kubot/internal/k8s"
 	"github.com/kevinrst/kubot/internal/model"
 )
@@ -85,6 +87,21 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, snap
 			related[d.Name] = true
 		}
 	}
+	for _, st := range snap.StatefulSets {
+		if inScope(st.Namespace) && nameHit(st.Name) {
+			related[st.Name] = true
+		}
+	}
+	for _, ds := range snap.DaemonSets {
+		if inScope(ds.Namespace) && nameHit(ds.Name) {
+			related[ds.Name] = true
+		}
+	}
+	for _, ing := range snap.Ingresses {
+		if inScope(ing.Namespace) && nameHit(ing.Name) {
+			related[ing.Name] = true
+		}
+	}
 	for changed := true; changed; {
 		changed = false
 		add := func(n string) {
@@ -120,6 +137,24 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, snap
 				}
 			}
 		}
+		for _, ing := range snap.Ingresses {
+			if !inScope(ing.Namespace) {
+				continue
+			}
+			backends := ingressBackends(&ing)
+			if related[ing.Name] {
+				for _, b := range backends {
+					add(b)
+				}
+			} else {
+				for _, b := range backends {
+					if related[b] {
+						add(ing.Name)
+						break
+					}
+				}
+			}
+		}
 	}
 	// Pods named "<workload>-<replicaset-hash>-<id>" belong to it too.
 	var out []model.Finding
@@ -138,6 +173,32 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, snap
 type podID struct {
 	ns   string
 	name string
+}
+
+// lists backend service names referenced by an ingress.
+func ingressBackends(ing *networkingv1.Ingress) []string {
+	var out []string
+	seen := map[string]bool{}
+	add := func(n string) {
+		if n != "" && !seen[n] {
+			seen[n] = true
+			out = append(out, n)
+		}
+	}
+	if ing.Spec.DefaultBackend != nil && ing.Spec.DefaultBackend.Service != nil {
+		add(ing.Spec.DefaultBackend.Service.Name)
+	}
+	for _, r := range ing.Spec.Rules {
+		if r.HTTP == nil {
+			continue
+		}
+		for _, p := range r.HTTP.Paths {
+			if p.Backend.Service != nil {
+				add(p.Backend.Service.Name)
+			}
+		}
+	}
+	return out
 }
 
 func podsMatchingSelector(snap *k8s.Snapshot, ns string, sel map[string]string) []string {

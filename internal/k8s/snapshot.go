@@ -4,6 +4,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 type Snapshot struct {
@@ -11,8 +12,13 @@ type Snapshot struct {
 	Pods           []corev1.Pod
 	Deployments    []appsv1.Deployment
 	ReplicaSets    []appsv1.ReplicaSet
+	StatefulSets   []appsv1.StatefulSet
+	DaemonSets     []appsv1.DaemonSet
 	Services       []corev1.Service
 	EndpointSlices []discoveryv1.EndpointSlice
+	Ingresses      []networkingv1.Ingress
+	IngressClasses []networkingv1.IngressClass
+	Secrets        []corev1.Secret
 	Events         []corev1.Event
 	Nodes          []corev1.Node
 	Usage          []ContainerUsage

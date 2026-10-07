@@ -8,6 +8,8 @@ func DefaultRules() []Rule {
 		PodPendingRule{},
 		PodProbeFailingRule{},
 		DeploymentUnavailableRule{},
+		StatefulSetUnavailableRule{},
+		DaemonSetUnavailableRule{},
 		ServiceNoEndpointsRule{},
 		PodMissingResourcesRule{},
 		PodLowLimitRule{},
@@ -18,9 +20,12 @@ func DefaultRules() []Rule {
 		PVCPendingRule{},
 		PodMountFailureRule{},
 		NodePressureRule{},
+		IngressNoBackendsRule{},
+		IngressClassRule{},
+		IngressTLSSecretRule{},
 	}
 }
 
 func CheckedSubsystems() []string {
-	return []string{"pods", "deployments", "services", "nodes", "events"}
+	return []string{"pods", "deployments", "statefulsets", "daemonsets", "services", "ingresses", "nodes", "events"}
 }

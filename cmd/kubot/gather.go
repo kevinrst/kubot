@@ -18,7 +18,10 @@ func gatherScoped(ctx context.Context, namespace string) (model.Report, *k8s.Sna
 	if err != nil {
 		return model.Report{}, nil, err
 	}
-	snap := k8s.Collect(ctx, cs, namespace, timeoutFlag)
+	snap, err := k8s.Collect(ctx, cs, namespace, timeoutFlag)
+	if err != nil {
+		return model.Report{}, nil, err
+	}
 	if mc, err := k8s.NewMetricsClient(k8s.Options{Kubeconfig: kubeconfigFlag, Context: contextFlag}); err == nil {
 		k8s.CollectMetrics(ctx, mc, namespace, snap)
 	} else {
@@ -36,5 +39,6 @@ func gatherScoped(ctx context.Context, namespace string) (model.Report, *k8s.Sna
 		Status:        model.OverallStatus(findings),
 		Issues:        findings,
 		Checked:       diagnose.CheckedSubsystems(),
+		Degraded:      snap.Degraded,
 	}, snap, nil
 }

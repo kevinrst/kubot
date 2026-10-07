@@ -2,23 +2,31 @@ package k8s
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, timeout time.Duration) *Snapshot {
+func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, timeout time.Duration) (*Snapshot, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	snap := &Snapshot{}
 	listOpts := metav1.ListOptions{Limit: 500}
 
+	failed, attempted := 0, 0
+	var firstErr error
 	collect := func(name string, fn func() error) {
+		attempted++
 		if err := fn(); err != nil {
 			if ctx.Err() != nil {
 				return
+			}
+			failed++
+			if firstErr == nil {
+				firstErr = err
 			}
 			snap.Degraded = append(snap.Degraded, name+": "+err.Error())
 		}
@@ -27,7 +35,12 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	collect("pods", func() error { return collectPods(ctx, listOpts, snap, cs, namespace) })
 	collect("deployments", func() error { return collectDeployments(ctx, listOpts, snap, cs, namespace) })
 	collect("replicasets", func() error { return collectReplicaSets(ctx, listOpts, snap, cs, namespace) })
+	collect("statefulsets", func() error { return collectStatefulSets(ctx, listOpts, snap, cs, namespace) })
+	collect("daemonsets", func() error { return collectDaemonSets(ctx, listOpts, snap, cs, namespace) })
 	collect("services", func() error { return collectServices(ctx, listOpts, snap, cs, namespace) })
+	collect("ingresses", func() error { return collectIngresses(ctx, listOpts, snap, cs, namespace) })
+	collect("ingressclasses", func() error { return collectIngressClasses(ctx, listOpts, snap, cs) })
+	collect("secrets", func() error { return collectSecrets(ctx, listOpts, snap, cs, namespace) })
 	collect("endpointslices", func() error { return collectEndpointSlices(ctx, listOpts, snap, cs, namespace) })
 	collect("events", func() error { return collectEvents(ctx, listOpts, snap, cs, namespace) })
 	collect("pvcs", func() error { return collectPVCs(ctx, listOpts, snap, cs, namespace) })
@@ -36,7 +49,10 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	if ctx.Err() == context.DeadlineExceeded {
 		snap.Degraded = append(snap.Degraded, "collection timed out; results partial")
 	}
-	return snap
+	if failed == attempted {
+		return nil, fmt.Errorf("cannot reach cluster: %w", firstErr)
+	}
+	return snap, nil
 }
 
 func collectPods(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
@@ -66,6 +82,24 @@ func collectReplicaSets(ctx context.Context, opts metav1.ListOptions, snap *Snap
 	return nil
 }
 
+func collectStatefulSets(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.AppsV1().StatefulSets(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.StatefulSets = res.Items
+	return nil
+}
+
+func collectDaemonSets(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.AppsV1().DaemonSets(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.DaemonSets = res.Items
+	return nil
+}
+
 func collectServices(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
 	res, err := cs.CoreV1().Services(ns).List(ctx, opts)
 	if err != nil {
@@ -81,6 +115,34 @@ func collectEndpointSlices(ctx context.Context, opts metav1.ListOptions, snap *S
 		return err
 	}
 	snap.EndpointSlices = res.Items
+	return nil
+}
+
+func collectIngresses(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.NetworkingV1().Ingresses(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.Ingresses = res.Items
+	return nil
+}
+
+func collectIngressClasses(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface) error {
+	// Cluster-scoped; ignore the namespace filter like nodes.
+	res, err := cs.NetworkingV1().IngressClasses().List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.IngressClasses = res.Items
+	return nil
+}
+
+func collectSecrets(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.CoreV1().Secrets(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.Secrets = res.Items
 	return nil
 }
 

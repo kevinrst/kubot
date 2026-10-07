@@ -119,7 +119,9 @@ func newNetworkingCmd() *cobra.Command {
 			}
 			var f []model.Finding
 			for _, i := range rep.Issues {
-				if i.Reason == "service_no_endpoints" || i.Reason == "pod_probe_failing" {
+				if i.Reason == "service_no_endpoints" || i.Reason == "pod_probe_failing" ||
+					i.Reason == "ingress_no_backends" || i.Reason == "ingress_unknown_class" ||
+					i.Reason == "ingress_tls_secret_missing" {
 					f = append(f, i)
 				}
 			}

@@ -82,8 +82,12 @@ Did you mean: payments-api?
 - Pending (unbound) PVCs
 - Pods failing to mount volumes
 - Nodes under memory/disk/PID pressure
+- StatefulSets and DaemonSets with unavailable pods
+- Ingresses pointing at missing or endpoint-less services
+- Ingresses with unknown or missing ingress class
+- Ingresses referencing nonexistent TLS secrets
 
-Sixteen checks done well beats thirty done badly. More coming.
+Twenty-one checks done well beats thirty done badly. More coming.
 
 ## JSON contract
 

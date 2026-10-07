@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kevinrst/kubot/internal/model/report",
+  "$ref": "#/$defs/Report",
+  "$defs": {
+    "ClusterInfo": {
+      "properties": {
+        "context": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Finding": {
+      "properties": {
+        "severity": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object"
+        },
+        "recommendation": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "severity",
+        "resource",
+        "reason",
+        "message"
+      ]
+    },
+    "Report": {
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "cluster": {
+          "$ref": "#/$defs/ClusterInfo"
+        },
+        "status": {
+          "type": "string"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "type": "array"
+        },
+        "checked": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "degraded": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "schema_version",
+        "status",
+        "issues"
+      ]
+    }
+  }
+}

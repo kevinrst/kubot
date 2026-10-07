@@ -19,6 +19,15 @@ func suggestWorkload(snap *k8s.Snapshot, query string) []string {
 	for _, d := range snap.Deployments {
 		add(d.Name)
 	}
+	for _, st := range snap.StatefulSets {
+		add(st.Name)
+	}
+	for _, ds := range snap.DaemonSets {
+		add(ds.Name)
+	}
+	for _, ing := range snap.Ingresses {
+		add(ing.Name)
+	}
 	for _, s := range snap.Services {
 		add(s.Name)
 	}

@@ -80,6 +80,15 @@ func PrintText(w io.Writer, rep model.Report, color bool, opt Options) error {
 	fmt.Fprintf(w, "%s · %s · %s · %s\n\n",
 		st.good("connected"), st.head(context), scope, st.dim("read-only"))
 
+	for _, d := range rep.Degraded {
+		for _, l := range wrap("unavailable: "+d, width) {
+			fmt.Fprintf(w, "%s\n", st.warn(l))
+		}
+	}
+	if len(rep.Degraded) > 0 {
+		fmt.Fprintln(w)
+	}
+
 	score := healthScore(rep.Issues)
 	paint := st.good
 	switch {
