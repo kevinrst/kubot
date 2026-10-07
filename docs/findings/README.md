@@ -26,3 +26,5 @@ it. Finding ids are stable: `kubot inspect --json` reports them in `reason`.
 | [ingress_no_backends](ingress_no_backends.md) | warning | route to missing/unready service |
 | [ingress_unknown_class](ingress_unknown_class.md) | warning | class nobody implements |
 | [ingress_tls_secret_missing](ingress_tls_secret_missing.md) | warning | TLS secret doesn't exist |
+| [job_failed](job_failed.md) | warning | job failed with no successes |
+| [cronjob_failing](cronjob_failing.md) | warning | latest scheduled run failed |

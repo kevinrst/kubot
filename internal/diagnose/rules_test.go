@@ -6,6 +6,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -637,5 +638,80 @@ func TestIngressTLSSecretMissing(t *testing.T) {
 	s.Secrets = []corev1.Secret{{ObjectMeta: metav1.ObjectMeta{Name: "shop-tls", Namespace: "default"}}}
 	if got := (IngressTLSSecretRule{}).Run(s); len(got) != 0 {
 		t.Fatalf("present secret must be silent, got %+v", got)
+	}
+}
+
+func failedJob() batchv1.Job {
+	backoff := int32(2)
+	return batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{Name: "backup", Namespace: "default"},
+		Spec:       batchv1.JobSpec{BackoffLimit: &backoff},
+		Status:     batchv1.JobStatus{Failed: 2},
+	}
+}
+
+func TestJobFailed(t *testing.T) {
+	s := &k8s.Snapshot{Jobs: []batchv1.Job{failedJob()}}
+	got := (JobFailedRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "job_failed" {
+		t.Fatalf("expected failed job, got %+v", got)
+	}
+	active := failedJob()
+	active.Status.Active = 1
+	s.Jobs = []batchv1.Job{active}
+	if got := (JobFailedRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("active job must be silent, got %+v", got)
+	}
+}
+
+func TestCronJobFailing(t *testing.T) {
+	j := failedJob()
+	j.OwnerReferences = []metav1.OwnerReference{{Kind: "CronJob", Name: "nightly"}}
+	cj := batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{Name: "nightly", Namespace: "default"},
+		Spec:       batchv1.CronJobSpec{Schedule: "0 2 * * *"},
+	}
+	s := &k8s.Snapshot{Jobs: []batchv1.Job{j}, CronJobs: []batchv1.CronJob{cj}}
+	got := (CronJobFailingRule{}).Run(s)
+	if len(got) != 1 || got[0].Reason != "cronjob_failing" {
+		t.Fatalf("expected failing cronjob, got %+v", got)
+	}
+	// A later success clears it.
+	ok := cj
+	now := metav1.Now()
+	ok.Status.LastSuccessfulTime = &now
+	s.CronJobs = []batchv1.CronJob{ok}
+	if got := (CronJobFailingRule{}).Run(s); len(got) != 0 {
+		t.Fatalf("recovered cronjob must be silent, got %+v", got)
+	}
+}
+
+func TestFilterCronJobPullsJobAndPods(t *testing.T) {
+	j := failedJob()
+	j.OwnerReferences = []metav1.OwnerReference{{Kind: "CronJob", Name: "nightly"}}
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "backup-abc", Namespace: "default",
+			OwnerReferences: []metav1.OwnerReference{{Kind: "Job", Name: "backup"}},
+		},
+		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app", Image: "x"}}},
+	}
+	cj := batchv1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: "nightly", Namespace: "default"}}
+	s := &k8s.Snapshot{
+		Jobs:     []batchv1.Job{j},
+		CronJobs: []batchv1.CronJob{cj},
+		Pods:     []corev1.Pod{pod},
+	}
+	e := NewEngine()
+	all := e.Run(s)
+	got := FilterByWorkload(all, "nightly", "", s)
+	names := map[string]bool{}
+	for _, f := range got {
+		names[f.Resource] = true
+	}
+	for _, want := range []string{"cronjob/nightly", "job/backup", "pod/backup-abc"} {
+		if !names[want] {
+			t.Fatalf("missing %s in %+v", want, names)
+		}
 	}
 }

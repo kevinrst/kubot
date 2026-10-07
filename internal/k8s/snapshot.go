@@ -2,6 +2,7 @@ package k8s
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -18,6 +19,8 @@ type Snapshot struct {
 	EndpointSlices []discoveryv1.EndpointSlice
 	Ingresses      []networkingv1.Ingress
 	IngressClasses []networkingv1.IngressClass
+	Jobs           []batchv1.Job
+	CronJobs       []batchv1.CronJob
 	Secrets        []corev1.Secret
 	Events         []corev1.Event
 	Nodes          []corev1.Node

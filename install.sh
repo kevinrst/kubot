@@ -3,8 +3,10 @@
 #   curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
 #
 # Env: KUBOT_VERSION (default: latest release tag), KUBOT_INSTALL_DIR
-#      (default: /usr/local/bin). Verifies the sha256 checksum; cosign
-#      signature verification is planned, not yet shipped.
+#      (default: /usr/local/bin), KUBOT_REQUIRE_SIGNATURE=1 (hard-fail
+#      unless the cosign signature verifies; needs cosign on PATH).
+# Verifies the sha256 checksum always, and the cosign signature when cosign
+# is available (keyless, GitHub Actions OIDC).
 set -eu
 
 REPO="kevinrst/kubot"
@@ -43,6 +45,34 @@ resolve_tag() {
   curl -fsSL -o /dev/null -w "%{url_effective}\n" "https://github.com/$REPO/releases/latest" | sed 's#.*/tag/##'
 }
 
+# verify_signature checks the cosign bundle when cosign exists. With
+# KUBOT_REQUIRE_SIGNATURE=1 a missing cosign, missing bundle, or failed
+# verification is fatal; otherwise the install proceeds checksum-verified.
+verify_signature() {
+  tmp="$1"; tag="$2"
+  if ! command -v cosign >/dev/null 2>&1; then
+    if [ "${KUBOT_REQUIRE_SIGNATURE:-0}" = "1" ]; then
+      echo "KUBOT_REQUIRE_SIGNATURE=1 but cosign is not on PATH" >&2; exit 1
+    fi
+    echo "cosign not found — checksum verified, signature skipped (brew install cosign for full verification)"
+    return 0
+  fi
+  if ! curl -fsSL -o "$tmp/checksums.txt.cosign.bundle" \
+      "https://github.com/$REPO/releases/download/${tag}/checksums.txt.cosign.bundle"; then
+    if [ "${KUBOT_REQUIRE_SIGNATURE:-0}" = "1" ]; then
+      echo "KUBOT_REQUIRE_SIGNATURE=1 but no signature bundle published" >&2; exit 1
+    fi
+    echo "no signature bundle published — checksum verified only"
+    return 0
+  fi
+  (cd "$tmp" && cosign verify-blob --bundle checksums.txt.cosign.bundle \
+    --certificate-identity-regexp "^https://github.com/$REPO/\.github/workflows/release\.yml@" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com checksums.txt) || {
+    echo "signature verification FAILED — aborted" >&2; exit 1
+  }
+  echo "signature verified"
+}
+
 main() {
   need() { command -v "$1" >/dev/null 2>&1 || { echo "need $1" >&2; exit 1; }; }
   need curl
@@ -68,6 +98,7 @@ main() {
   (cd "$tmp" && grep "  ${base}.${arc}\$" checksums.txt | sha256check) || {
     echo "checksum mismatch — aborted" >&2; exit 1
   }
+  verify_signature "$tmp" "$tag"
 
   if [ "$arc" = "zip" ]; then
     (cd "$tmp" && unzip -o -q "${base}.zip")

@@ -23,9 +23,11 @@ func DefaultRules() []Rule {
 		IngressNoBackendsRule{},
 		IngressClassRule{},
 		IngressTLSSecretRule{},
+		JobFailedRule{},
+		CronJobFailingRule{},
 	}
 }
 
 func CheckedSubsystems() []string {
-	return []string{"pods", "deployments", "statefulsets", "daemonsets", "services", "ingresses", "nodes", "events"}
+	return []string{"pods", "deployments", "statefulsets", "daemonsets", "services", "ingresses", "jobs", "nodes", "events"}
 }

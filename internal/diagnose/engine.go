@@ -102,6 +102,16 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, snap
 			related[ing.Name] = true
 		}
 	}
+	for _, j := range snap.Jobs {
+		if inScope(j.Namespace) && nameHit(j.Name) {
+			related[j.Name] = true
+		}
+	}
+	for _, cj := range snap.CronJobs {
+		if inScope(cj.Namespace) && nameHit(cj.Name) {
+			related[cj.Name] = true
+		}
+	}
 	for changed := true; changed; {
 		changed = false
 		add := func(n string) {
@@ -116,6 +126,22 @@ func FilterByWorkload(findings []model.Finding, workload, namespace string, snap
 			}
 			if related[id.name] {
 				add(owner)
+			}
+		}
+		for _, j := range snap.Jobs {
+			if !inScope(j.Namespace) {
+				continue
+			}
+			for _, o := range j.OwnerReferences {
+				if o.Kind != "CronJob" {
+					continue
+				}
+				if related[o.Name] {
+					add(j.Name)
+				}
+				if related[j.Name] {
+					add(o.Name)
+				}
 			}
 		}
 		for _, svc := range snap.Services {

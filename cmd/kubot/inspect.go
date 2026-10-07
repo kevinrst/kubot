@@ -23,7 +23,7 @@ const (
 
 type inspectFlags struct {
 	json     bool
-	format   string // text|json
+	format   string // text|json|sarif|junit
 	failOn   string // critical|warn|info|none
 	full     bool   // evidence + recommendations per finding
 	workload string
@@ -45,7 +45,7 @@ func newInspectCmd() *cobra.Command {
 	}
 	fl := cmd.Flags()
 	fl.BoolVar(&f.json, "json", false, "emit the versioned Report as JSON (the agent/script contract)")
-	fl.StringVar(&f.format, "format", "text", "output format: text|json")
+	fl.StringVar(&f.format, "format", "text", "output format: text|json|sarif|junit")
 	fl.StringVar(&f.failOn, "fail-on", "none", "exit non-zero on findings at/above this severity: critical|warn|info|none (default none; use check for CI gating)")
 	fl.BoolVar(&f.full, "full", false, "show evidence and recommendations per finding")
 	return cmd
@@ -59,7 +59,7 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 		f.format = "json" // --json is a shortcut for --format=json
 	}
 	if !validFormat(f.format) {
-		return usageErrf("--format must be text|json, got %q", f.format)
+		return usageErrf("--format must be text|json|sarif|junit, got %q", f.format)
 	}
 
 	ctx, cancel := context.WithTimeout(cmd.Context(), timeoutFlag)
@@ -74,8 +74,20 @@ func runInspect(cmd *cobra.Command, f inspectFlags) error {
 		rep.Status = model.OverallStatus(rep.Issues)
 	}
 
-	if err := render.PrintReport(cmd.OutOrStdout(), rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json", Full: f.full, Width: terminalWidth(), NoScore: f.workload != ""}); err != nil {
-		return err
+	out := cmd.OutOrStdout()
+	switch f.format {
+	case "sarif":
+		if err := render.WriteSARIF(out, rep, appVersion()); err != nil {
+			return err
+		}
+	case "junit":
+		if err := render.WriteJUnit(out, rep); err != nil {
+			return err
+		}
+	default:
+		if err := render.PrintReport(out, rep, render.Options{NoColor: noColorFlag, JSON: f.format == "json", Full: f.full, Width: terminalWidth(), NoScore: f.workload != ""}); err != nil {
+			return err
+		}
 	}
 	if f.workload != "" && len(rep.Issues) == 0 && f.format == "text" {
 		if s := suggestWorkload(snap, f.workload); len(s) > 0 {
@@ -132,7 +144,7 @@ func validFailOn(s string) bool {
 
 func validFormat(s string) bool {
 	switch s {
-	case "text", "json":
+	case "text", "json", "sarif", "junit":
 		return true
 	}
 	return false

@@ -204,3 +204,79 @@ func TestResourcesTable_evenWidths(t *testing.T) {
 		}
 	}
 }
+
+func TestSARIF(t *testing.T) {
+	rep := testReport()
+	rep.Issues = append(rep.Issues, model.Finding{
+		Severity: model.SeverityCritical, Resource: "pod/muted",
+		Reason: "test_muted", Message: "muted critical",
+		Suppressed: true, SuppressionReason: "demo",
+	})
+	var buf bytes.Buffer
+	if err := WriteSARIF(&buf, rep, "v0.0.0-test"); err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Version string `json:"version"`
+		Runs    []struct {
+			Tool struct {
+				Driver struct {
+					Name    string `json:"name"`
+					Version string `json:"version"`
+					Rules   []struct {
+						ID string `json:"id"`
+					} `json:"rules"`
+				} `json:"driver"`
+			} `json:"tool"`
+			Results []struct {
+				RuleID       string `json:"ruleId"`
+				Level        string `json:"level"`
+				Suppressions []struct {
+					Justification string `json:"justification"`
+				} `json:"suppressions"`
+			} `json:"results"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+		t.Fatalf("not valid JSON: %v", err)
+	}
+	if doc.Version != "2.1.0" || doc.Runs[0].Tool.Driver.Name != "kubot" {
+		t.Fatalf("bad envelope: %+v", doc.Version)
+	}
+	if doc.Runs[0].Tool.Driver.Version != "v0.0.0-test" {
+		t.Errorf("driver version missing")
+	}
+	byID := map[string]string{}
+	var muted []string
+	for _, r := range doc.Runs[0].Results {
+		byID[r.RuleID] = r.Level
+		if len(r.Suppressions) > 0 {
+			muted = append(muted, r.RuleID)
+		}
+	}
+	if byID["pod_oom_killed"] != "error" || byID["service_no_endpoints"] != "warning" {
+		t.Errorf("severity levels wrong: %+v", byID)
+	}
+	if len(muted) != 1 || muted[0] != "test_muted" {
+		t.Errorf("suppressed must carry suppression: %+v", muted)
+	}
+}
+
+func TestJUnit(t *testing.T) {
+	rep := testReport()
+	rep.Issues = append(rep.Issues, model.Finding{
+		Severity: model.SeverityCritical, Resource: "pod/muted",
+		Reason: "test_muted", Message: "muted critical",
+		Suppressed: true, SuppressionReason: "demo",
+	})
+	var buf bytes.Buffer
+	if err := WriteJUnit(&buf, rep); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{`<testsuite name="kubot"`, `failures="2"`, `skipped="1"`, `classname="pod_oom_killed"`, `<skipped/>`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("junit missing %q:\n%s", want, out)
+		}
+	}
+}

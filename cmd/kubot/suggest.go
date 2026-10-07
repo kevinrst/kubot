@@ -28,6 +28,12 @@ func suggestWorkload(snap *k8s.Snapshot, query string) []string {
 	for _, ing := range snap.Ingresses {
 		add(ing.Name)
 	}
+	for _, j := range snap.Jobs {
+		add(j.Name)
+	}
+	for _, cj := range snap.CronJobs {
+		add(cj.Name)
+	}
 	for _, s := range snap.Services {
 		add(s.Name)
 	}

@@ -61,13 +61,13 @@ func TestValidFailOnAndFormat(t *testing.T) {
 	if validFailOn("bogus") {
 		t.Error("validFailOn(bogus)=true")
 	}
-	for _, ok := range []string{"text", "json"} {
+	for _, ok := range []string{"text", "json", "sarif", "junit"} {
 		if !validFormat(ok) {
 			t.Errorf("validFormat(%q)=false", ok)
 		}
 	}
-	if validFormat("sarif") {
-		t.Error("validFormat(sarif) should be false until the format ships")
+	if validFormat("tap") {
+		t.Error("validFormat(tap) should be false")
 	}
 }
 

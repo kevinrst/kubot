@@ -18,6 +18,10 @@ Or build from source (needs Go):
 go install github.com/kevinrst/kubot/cmd/kubot@latest
 ```
 
+The script verifies the sha256 checksum always, and the cosign signature
+(keyless, GitHub Actions OIDC) when `cosign` is on PATH —
+`KUBOT_REQUIRE_SIGNATURE=1` makes the signature mandatory.
+
 Needs a kubeconfig that can read the cluster (`~/.kube/config`, `$KUBECONFIG`, `--kubeconfig`, or in-cluster). It only GETs/LISTs. It never writes anything.
 
 ## Use
@@ -86,8 +90,10 @@ Did you mean: payments-api?
 - Ingresses pointing at missing or endpoint-less services
 - Ingresses with unknown or missing ingress class
 - Ingresses referencing nonexistent TLS secrets
+- Failed Jobs with no successes
+- CronJobs whose latest run failed with no success since
 
-Twenty-one checks done well beats thirty done badly. More coming.
+Twenty-three checks done well beats thirty done badly. More coming.
 
 ## JSON contract
 

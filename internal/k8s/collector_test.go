@@ -7,6 +7,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,8 @@ func TestCollect_fakeClient(t *testing.T) {
 		&networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{Name: "shop", Namespace: "default"}},
 		&networkingv1.IngressClass{ObjectMeta: metav1.ObjectMeta{Name: "nginx"}},
 		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "shop-tls", Namespace: "default"}},
+		&batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "backup", Namespace: "default"}},
+		&batchv1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: "nightly", Namespace: "default"}},
 	)
 	snap, err := Collect(context.Background(), cs, "", 10*time.Second)
 	if err != nil {
@@ -41,6 +44,9 @@ func TestCollect_fakeClient(t *testing.T) {
 	}
 	if len(snap.Ingresses) != 1 || len(snap.IngressClasses) != 1 || len(snap.Secrets) != 1 {
 		t.Fatalf("missing networking: ing=%d class=%d secrets=%d", len(snap.Ingresses), len(snap.IngressClasses), len(snap.Secrets))
+	}
+	if len(snap.Jobs) != 1 || len(snap.CronJobs) != 1 {
+		t.Fatalf("missing batch: jobs=%d crons=%d", len(snap.Jobs), len(snap.CronJobs))
 	}
 	if len(snap.Degraded) != 0 {
 		t.Fatalf("unexpected degradations: %v", snap.Degraded)

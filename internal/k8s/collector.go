@@ -41,6 +41,8 @@ func Collect(ctx context.Context, cs kubernetes.Interface, namespace string, tim
 	collect("ingresses", func() error { return collectIngresses(ctx, listOpts, snap, cs, namespace) })
 	collect("ingressclasses", func() error { return collectIngressClasses(ctx, listOpts, snap, cs) })
 	collect("secrets", func() error { return collectSecrets(ctx, listOpts, snap, cs, namespace) })
+	collect("jobs", func() error { return collectJobs(ctx, listOpts, snap, cs, namespace) })
+	collect("cronjobs", func() error { return collectCronJobs(ctx, listOpts, snap, cs, namespace) })
 	collect("endpointslices", func() error { return collectEndpointSlices(ctx, listOpts, snap, cs, namespace) })
 	collect("events", func() error { return collectEvents(ctx, listOpts, snap, cs, namespace) })
 	collect("pvcs", func() error { return collectPVCs(ctx, listOpts, snap, cs, namespace) })
@@ -124,6 +126,24 @@ func collectIngresses(ctx context.Context, opts metav1.ListOptions, snap *Snapsh
 		return err
 	}
 	snap.Ingresses = res.Items
+	return nil
+}
+
+func collectJobs(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.BatchV1().Jobs(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.Jobs = res.Items
+	return nil
+}
+
+func collectCronJobs(ctx context.Context, opts metav1.ListOptions, snap *Snapshot, cs kubernetes.Interface, ns string) error {
+	res, err := cs.BatchV1().CronJobs(ns).List(ctx, opts)
+	if err != nil {
+		return err
+	}
+	snap.CronJobs = res.Items
 	return nil
 }
 
