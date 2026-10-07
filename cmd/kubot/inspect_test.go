@@ -99,3 +99,10 @@ func TestAppVersion(t *testing.T) {
 		t.Fatalf("must resolve to something printable, got %q", got)
 	}
 }
+
+func TestExitCodeSkipsSuppressed(t *testing.T) {
+	fs := []model.Finding{{Severity: "critical", Resource: "pod/x", Reason: "test", Suppressed: true}}
+	if got := exitCode(fs, "critical"); got != exitClean {
+		t.Fatalf("suppressed must not move exit code, got %d", got)
+	}
+}

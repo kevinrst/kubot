@@ -28,7 +28,11 @@ func newCheckCmd() *cobra.Command {
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "status: %s, issues: %d\n", rep.Status, len(rep.Issues))
 			for _, i := range rep.Issues {
-				fmt.Fprintf(out, "%s %s: %s\n", i.Severity, i.Resource, i.Message)
+				muted := ""
+				if i.Suppressed {
+					muted = " (muted)"
+				}
+				fmt.Fprintf(out, "%s %s: %s%s\n", i.Severity, i.Resource, i.Message, muted)
 			}
 			return exitError{exitCode(rep.Issues, failOn)}
 		},

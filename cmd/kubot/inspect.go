@@ -93,7 +93,7 @@ func exitCode(fs []model.Finding, failOn string) int {
 	threshold := severityRank(failOn)
 	hasCritical, hasAtThreshold := false, false
 	for _, f := range fs {
-		if severityRank(f.Severity) < threshold {
+		if f.Suppressed || severityRank(f.Severity) < threshold {
 			continue
 		}
 		hasAtThreshold = true

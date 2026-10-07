@@ -116,6 +116,23 @@ Parse `--json`, not the terminal output. The human report is unstable by design;
 
 `0` clean · `1` warning · `2` critical · `3` connection failure · `64` bad flags. `inspect` exits 0 by default; gate with `--fail-on` or use `check` in CI.
 
+## Suppression
+
+Tolerated noise gets muted, never hidden. A `.kubot.toml` beside the repo (or `--config`, or `$KUBOT_CONFIG`):
+
+```toml
+[[ignore]]
+finding = "deployment_resource_risk"
+reason = "limits rollout is scheduled next quarter"
+
+[[ignore]]
+finding = "pod_missing_resources"
+object = "default/limitless-*"
+reason = "batch job, intentionally bare"
+```
+
+Muted findings stay visible (marked with the reason) and in `--json`, but never move the exit code or health score. Rules without a reason are rejected — write why. Credential-shaped keys are refused outright.
+
 ## AI layer (optional)
 
 `ask` and `explain` put a plain-language reading on top of the same deterministic findings. The model narrates; it never diagnoses. Before sending anything, kubot names the provider and model and asks — local endpoints skip the prompt, `--yes` skips it in scripts.

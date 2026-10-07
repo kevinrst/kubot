@@ -122,6 +122,9 @@ func PrintText(w io.Writer, rep model.Report, color bool, opt Options) error {
 				if f.Namespace != "" {
 					name += " " + st.dim("("+f.Namespace+")")
 				}
+				if f.Suppressed {
+					name += " " + st.dim("(muted: "+f.SuppressionReason+")")
+				}
 				fmt.Fprintf(w, "%s %s\n", paint("●"), name)
 				for _, l := range wrap(f.Message, width-4) {
 					fmt.Fprintf(w, "    %s\n", l)
@@ -162,6 +165,9 @@ func filterSev(fs []model.Finding, sev string) []model.Finding {
 func healthScore(fs []model.Finding) int {
 	penalty := 0
 	for _, f := range fs {
+		if f.Suppressed {
+			continue
+		}
 		switch f.Severity {
 		case model.SeverityCritical:
 			penalty += 10
@@ -204,6 +210,9 @@ func printFinding(w io.Writer, f model.Finding, st styler, width int) {
 	res := f.Resource
 	if f.Namespace != "" {
 		res = fmt.Sprintf("%s %s", f.Resource, st.dim("("+f.Namespace+")"))
+	}
+	if f.Suppressed {
+		res += " " + st.dim("(muted: "+f.SuppressionReason+")")
 	}
 	fmt.Fprintf(w, "  %s\n", st.head(res))
 	for _, l := range wrap(f.Message, width-4) {

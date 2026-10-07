@@ -27,6 +27,10 @@ type Finding struct {
 	Message        string         `json:"message"`
 	Evidence       map[string]any `json:"evidence,omitempty"`
 	Recommendation string         `json:"recommendation,omitempty"`
+	// Suppressed marks findings muted by .kubot.toml. They stay visible and
+	// machine-readable but never move exit codes or the health score.
+	Suppressed        bool   `json:"suppressed,omitempty"`
+	SuppressionReason string `json:"suppression_reason,omitempty"`
 }
 
 type ClusterInfo struct {
@@ -46,6 +50,9 @@ type Report struct {
 func OverallStatus(findings []Finding) string {
 	status := "ok"
 	for _, f := range findings {
+		if f.Suppressed {
+			continue
+		}
 		switch f.Severity {
 		case SeverityCritical:
 			return "critical"

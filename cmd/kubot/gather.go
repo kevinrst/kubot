@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
 
+	"github.com/kevinrst/kubot/internal/config"
 	"github.com/kevinrst/kubot/internal/diagnose"
 	"github.com/kevinrst/kubot/internal/k8s"
 	"github.com/kevinrst/kubot/internal/model"
@@ -32,6 +34,18 @@ func gatherScoped(ctx context.Context, namespace string) (model.Report, *k8s.Sna
 	findings := engine.Run(snap)
 	if findings == nil {
 		findings = []model.Finding{}
+	}
+	if path := config.Discover(configFlag, os.Getenv("KUBOT_CONFIG")); path != "" {
+		cfg, err := config.Load(path)
+		if err != nil {
+			return model.Report{}, nil, err
+		}
+		for i, f := range findings {
+			if reason, ok := cfg.Match(f.Reason, f.Namespace, f.Resource); ok {
+				findings[i].Suppressed = true
+				findings[i].SuppressionReason = reason
+			}
+		}
 	}
 	return model.Report{
 		SchemaVersion: model.SchemaVersion,

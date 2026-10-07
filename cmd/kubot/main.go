@@ -33,6 +33,7 @@ var (
 	namespaceFlag  string
 	timeoutFlag    time.Duration
 	noColorFlag    bool
+	configFlag     string
 )
 
 func main() {
@@ -69,6 +70,8 @@ func main() {
 		"total wall-clock budget for cluster collection")
 	root.PersistentFlags().BoolVar(&noColorFlag, "no-color", false,
 		"disable ANSI color (also honors NO_COLOR)")
+	root.PersistentFlags().StringVar(&configFlag, "config", "",
+		"path to .kubot.toml (default: $KUBOT_CONFIG or ./.kubot.toml)")
 
 	enteredRun := false
 	root.PersistentPreRun = func(*cobra.Command, []string) {
