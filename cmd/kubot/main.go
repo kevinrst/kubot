@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -13,6 +14,21 @@ import (
 )
 
 var version = "dev"
+
+// appVersion prefers the linker stamp; `go install pkg@version` records the
+// module version in the build info, so source installs report it instead of
+// "dev". Local builds report "dev".
+func appVersion() string {
+	if version != "" && version != "dev" {
+		return version
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		if v := bi.Main.Version; v != "" && v != "(devel)" {
+			return v
+		}
+	}
+	return "dev"
+}
 
 var (
 	kubeconfigFlag string
@@ -34,7 +50,7 @@ func main() {
 			"failed probes, unavailable deployments, services without endpoints.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Version:       version,
+		Version:       appVersion(),
 	}
 	root.AddCommand(newInspectCmd())
 	root.AddCommand(newWhyCmd())

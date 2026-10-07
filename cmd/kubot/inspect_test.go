@@ -86,3 +86,16 @@ func TestExitErrorCarriesCode(t *testing.T) {
 		t.Fatalf("expected code 2, got %v", err)
 	}
 }
+
+func TestAppVersion(t *testing.T) {
+	old := version
+	defer func() { version = old }()
+	version = "v9.9.9"
+	if got := appVersion(); got != "v9.9.9" {
+		t.Fatalf("linker stamp must win, got %q", got)
+	}
+	version = "dev"
+	if got := appVersion(); got == "" || got == "(devel)" {
+		t.Fatalf("must resolve to something printable, got %q", got)
+	}
+}

@@ -27,7 +27,7 @@ func newMCPCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			srv := &mcp.Server{
 				Name:    "kubot",
-				Version: version,
+				Version: appVersion(),
 				Instructions: "kubot gives read-only Kubernetes health findings. Call `inspect` and " +
 					"explain its findings to the user — the findings are computed deterministically; " +
 					"treat them as facts and carry any caveats into your advice.",
