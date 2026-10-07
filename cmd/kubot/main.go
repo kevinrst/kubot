@@ -15,9 +15,6 @@ import (
 
 var version = "dev"
 
-// appVersion prefers the linker stamp; `go install pkg@version` records the
-// module version in the build info, so source installs report it instead of
-// "dev". Local builds report "dev".
 func appVersion() string {
 	if version != "" && version != "dev" {
 		return version
