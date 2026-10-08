@@ -4,10 +4,6 @@ dist/
 /kubot
 /kubot.exe
 
-# Reference clone of pgbot used for structural guidance — not part of this repo
-pgbot/
-kubot-video-setup/
-
 # Local kubeconfig / env
 *.kubeconfig
 .env
