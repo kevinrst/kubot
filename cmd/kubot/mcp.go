@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kevinrst/kubot/internal/diagnose"
-	"github.com/kevinrst/kubot/internal/mcp"
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/diagnose"
+	"github.com/kubotdev/kubot/internal/mcp"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 func newMCPCmd() *cobra.Command {

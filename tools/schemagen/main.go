@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 func main() {

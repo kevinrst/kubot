@@ -5,7 +5,7 @@ Two ways in, same binary out.
 ## Curl (no Go needed)
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/kubotdev/kubot/main/install.sh | sh
 ```
 
 Downloads the release archive for your OS/arch from GitHub Releases,
@@ -15,7 +15,7 @@ with `KUBOT_INSTALL_DIR`). Pin a version with `KUBOT_VERSION=v1.0.0`.
 ## Go toolchain
 
 ```sh
-go install github.com/kevinrst/kubot/cmd/kubot@latest
+go install github.com/kubotdev/kubot/cmd/kubot@latest
 ```
 
 Reports the module version via `kubot --version` (release binaries are

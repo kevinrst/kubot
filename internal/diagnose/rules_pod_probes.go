@@ -6,8 +6,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/kevinrst/kubot/internal/k8s"
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 // Fewer aggregated failures than this is startup noise, not a broken probe.

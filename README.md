@@ -9,13 +9,13 @@ Read-only. Deterministic. For humans and AI agents. [Apache-2.0](LICENSE).
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/kubotdev/kubot/main/install.sh | sh
 ```
 
 Or build from source (needs Go):
 
 ```sh
-go install github.com/kevinrst/kubot/cmd/kubot@latest
+go install github.com/kubotdev/kubot/cmd/kubot@latest
 ```
 
 The script verifies the sha256 checksum always, and the cosign signature

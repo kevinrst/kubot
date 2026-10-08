@@ -6,7 +6,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 // WriteSARIF renders SARIF 2.1.0 for CI ingestion (e.g. GitHub code
@@ -109,7 +109,7 @@ func WriteSARIF(w io.Writer, rep model.Report, version string) error {
 				"driver": map[string]any{
 					"name":           "kubot",
 					"version":        version,
-					"informationUri": "https://github.com/kevinrst/kubot",
+					"informationUri": "https://github.com/kubotdev/kubot",
 					"rules":          rules,
 				},
 			},

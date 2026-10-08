@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"github.com/kevinrst/kubot/internal/ai"
-	"github.com/kevinrst/kubot/internal/diagnose"
-	"github.com/kevinrst/kubot/internal/model"
-	"github.com/kevinrst/kubot/internal/render"
+	"github.com/kubotdev/kubot/internal/ai"
+	"github.com/kubotdev/kubot/internal/diagnose"
+	"github.com/kubotdev/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/render"
 )
 
 func newAskCmd() *cobra.Command {

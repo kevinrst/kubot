@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kevinrst/kubot/internal/diagnose"
-	"github.com/kevinrst/kubot/internal/model"
-	"github.com/kevinrst/kubot/internal/render"
+	"github.com/kubotdev/kubot/internal/diagnose"
+	"github.com/kubotdev/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/render"
 )
 
 func newWhyCmd() *cobra.Command {

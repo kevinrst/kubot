@@ -8,7 +8,7 @@ import (
 
 	"github.com/mattn/go-runewidth"
 
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 func testReport() model.Report {

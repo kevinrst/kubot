@@ -8,8 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/kevinrst/kubot/internal/k8s"
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 // Below this, a memory limit is more likely a typo than a budget.

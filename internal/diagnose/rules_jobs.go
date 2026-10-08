@@ -5,8 +5,8 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 
-	"github.com/kevinrst/kubot/internal/k8s"
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 // jobFailed reports a terminally failed job: failures recorded, nothing

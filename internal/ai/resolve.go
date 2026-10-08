@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 func Resolve() (Provider, error) {

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/k8s"
 )
 
 func suggestWorkload(snap *k8s.Snapshot, query string) []string {

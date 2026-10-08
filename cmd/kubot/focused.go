@@ -9,10 +9,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/kevinrst/kubot/internal/diagnose"
-	"github.com/kevinrst/kubot/internal/k8s"
-	"github.com/kevinrst/kubot/internal/model"
-	"github.com/kevinrst/kubot/internal/render"
+	"github.com/kubotdev/kubot/internal/diagnose"
+	"github.com/kubotdev/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/render"
 )
 
 func newResourcesCmd() *cobra.Command {

@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kevinrst/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/k8s"
 )
 
 func crashPod() corev1.Pod {

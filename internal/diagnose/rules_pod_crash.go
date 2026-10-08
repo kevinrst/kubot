@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kevinrst/kubot/internal/k8s"
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/k8s"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 type PodCrashLoopRule struct{}

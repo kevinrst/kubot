@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kevinrst/kubot/internal/model"
+	"github.com/kubotdev/kubot/internal/model"
 )
 
 func TestOpenAIRequestShape(t *testing.T) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Install kubot from GitHub Releases. Usage:
-#   curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/kubotdev/kubot/main/install.sh | sh
 #
 # Env: KUBOT_VERSION (default: latest release tag), KUBOT_INSTALL_DIR
 #      (default: /usr/local/bin), KUBOT_REQUIRE_SIGNATURE=1 (hard-fail
@@ -13,7 +13,7 @@ set -eu
 # unless told not to — which silently breaks the cosign identity match below.
 export MSYS_NO_PATHCONV=1
 
-REPO="kevinrst/kubot"
+REPO="kubotdev/kubot"
 VERSION="${KUBOT_VERSION:-latest}"
 INSTALL_DIR="${KUBOT_INSTALL_DIR:-/usr/local/bin}"
 
