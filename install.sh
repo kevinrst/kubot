@@ -9,6 +9,10 @@
 # is available (keyless, GitHub Actions OIDC).
 set -eu
 
+# Git Bash rewrites slash-containing args (URLs, regexps) into Windows paths
+# unless told not to — which silently breaks the cosign identity match below.
+export MSYS_NO_PATHCONV=1
+
 REPO="kevinrst/kubot"
 VERSION="${KUBOT_VERSION:-latest}"
 INSTALL_DIR="${KUBOT_INSTALL_DIR:-/usr/local/bin}"
