@@ -10,7 +10,7 @@ curl -fsSL https://raw.githubusercontent.com/kevinrst/kubot/main/install.sh | sh
 
 Downloads the release archive for your OS/arch from GitHub Releases,
 verifies its sha256 checksum, and installs to `/usr/local/bin` (override
-with `KUBOT_INSTALL_DIR`). Pin a version with `KUBOT_VERSION=v0.1.1`.
+with `KUBOT_INSTALL_DIR`). Pin a version with `KUBOT_VERSION=v1.0.0`.
 
 ## Go toolchain
 

@@ -97,11 +97,11 @@ Twenty-three checks done well beats thirty done badly. More coming.
 
 ## JSON contract
 
-`kubot inspect --json` emits a versioned report (`schema_version`, currently `0.1.0`, schema in `schema/`):
+`kubot inspect --json` emits a versioned report (`schema_version`, currently `1.0.0`, schema in `schema/`):
 
 ```json
 {
-  "schema_version": "0.1.0",
+  "schema_version": "1.0.0",
   "status": "critical",
   "issues": [
     {
