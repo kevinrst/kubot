@@ -182,6 +182,8 @@ go run ./tools/schemagen   # regenerate schema/ from the Go types after changing
 
 Full docs live in [`docs/`](docs/README.md) — install, commands, config, JSON, MCP, AI, findings, troubleshooting, architecture.
 
+Contributions welcome — read [`CONTRIBUTING.md`](CONTRIBUTING.md) first.
+
 Status: early. Expect sharp edges.
 
 ## License
