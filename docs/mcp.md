@@ -15,11 +15,11 @@ Point it at a cluster via flags (stdio has no per-call connection):
 {
   "mcpServers": {
     "kubot": {
-      "command": ["kubot", "--context", "my-cluster", "mcp"]
+      "command": "kubot",
+      "args": ["--context", "my-cluster", "mcp"]
     }
   }
 }
-```
 
 For opencode (`opencode.json`):
 

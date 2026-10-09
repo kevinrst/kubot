@@ -249,7 +249,8 @@ Point it at a cluster:
 {
   "mcpServers": {
     "kubot": {
-      "command": ["kubot", "--context", "my-cluster", "mcp"]
+      "command": "kubot",
+      "args": ["--context", "my-cluster", "mcp"]
     }
   }
 }
